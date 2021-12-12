@@ -1,0 +1,100 @@
+object frmEditor: TfrmEditor
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 522
+  ClientWidth = 315
+  Fill.Kind = Solid
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  DesignerMasterStyle = 3
+  object rectTopo: TRectangle
+    Align = Top
+    Fill.Color = xFF353858
+    Size.Width = 315.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    Stroke.Kind = None
+    object Layout2: TLayout
+      Align = Client
+      Size.Width = 315.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object Layout1: TLayout
+        Align = Client
+        Size.Width = 315.000000000000000000
+        Size.Height = 50.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object btnVoltar: TSpeedButton
+          Align = Left
+          IconTintColor = claLavender
+          Position.Y = 1.000000000000000000
+          Size.Width = 48.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'priortoolbutton'
+          OnClick = btnVoltarClick
+        end
+        object btnAplicar: TSpeedButton
+          Align = Right
+          IconTintColor = claLavender
+          Position.X = 267.000000000000000000
+          Position.Y = 1.000000000000000000
+          Size.Width = 48.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'donetoolbutton'
+          OnClick = btnAplicarClick
+        end
+      end
+      object lblTitulo: TLabel
+        Align = Center
+        StyledSettings = [Family, Size]
+        Margins.Left = 10.000000000000000000
+        Size.Width = 222.000000000000000000
+        Size.Height = 50.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.StyleExt = {00060000000000000004000000}
+        TextSettings.FontColor = claLavender
+        TextSettings.HorzAlign = Center
+        Text = 'Produtos'
+        TabOrder = 1
+      end
+    end
+  end
+  object Layout3: TLayout
+    Align = Top
+    Position.Y = 50.000000000000000000
+    Size.Width = 315.000000000000000000
+    Size.Height = 47.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object rectEdit: TRectangle
+      Align = Scale
+      Position.X = 10.000004768371580000
+      Position.Y = 5.000000000000000000
+      Size.Width = 296.000152587890600000
+      Size.Height = 37.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      XRadius = 15.000000000000000000
+      YRadius = 15.000000000000000000
+      object edtTexto: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        Align = Center
+        StyleLookup = 'edtUsuarioStyle1'
+        TabOrder = 0
+        KeyboardType = DecimalNumberPad
+        TextSettings.HorzAlign = Center
+        Size.Width = 262.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        TextPrompt = 'Usu'#225'rio'
+        OnKeyUp = edtTextoKeyUp
+      end
+    end
+  end
+end

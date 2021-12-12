@@ -1,0 +1,64 @@
+inherited frmCnsCliente: TfrmCnsCliente
+  Caption = 'frmCnsBase1'
+  DesignerMasterStyle = 3
+  inherited layConsulta: TLayout
+    inherited layEditBusca: TLayout
+      inherited edtBusca: TEdit
+        TextPrompt = 'Nome'
+        OnChangeTracking = edtBuscaChangeTracking
+      end
+    end
+    inherited lvConsulta: TListView
+      ItemAppearanceObjects.ItemObjects.ObjectsCollection = <
+        item
+          AppearanceObjectName = 'Text1'
+          AppearanceClassName = 'TTextObjectAppearance'
+          Appearance.Font.Size = 11.000000000000000000
+          Appearance.TextAlign = Leading
+          Appearance.Width = 24.000000000000000000
+          Appearance.Height = 17.000000000000000000
+          Appearance.PlaceOffset.X = 5.000000000000000000
+          Appearance.PlaceOffset.Y = 2.000000000000000000
+        end
+        item
+          AppearanceObjectName = 'Text2'
+          AppearanceClassName = 'TTextObjectAppearance'
+          Appearance.Font.Size = 11.000000000000000000
+          Appearance.TextAlign = Leading
+          Appearance.Width = 243.000000000000000000
+          Appearance.Height = 17.000000000000000000
+          Appearance.PlaceOffset.X = 45.000000000000000000
+          Appearance.PlaceOffset.Y = 2.000000000000000000
+        end
+        item
+          AppearanceObjectName = 'Text3'
+          AppearanceClassName = 'TTextObjectAppearance'
+          Appearance.Font.Size = 11.000000000000000000
+          Appearance.TextAlign = Leading
+          Appearance.Width = 74.000000000000000000
+          Appearance.Height = 17.000000000000000000
+          Appearance.PlaceOffset.X = 5.000000000000000000
+          Appearance.PlaceOffset.Y = 25.000000000000000000
+        end
+        item
+          AppearanceObjectName = 'Text4'
+          AppearanceClassName = 'TTextObjectAppearance'
+          Appearance.Font.Size = 11.000000000000000000
+          Appearance.TextAlign = Leading
+          Appearance.Width = 65.000000000000000000
+          Appearance.Height = 17.000000000000000000
+          Appearance.PlaceOffset.X = 83.000000000000000000
+          Appearance.PlaceOffset.Y = 25.000000000000000000
+        end>
+    end
+    inherited rectTopo: TRectangle
+      inherited Layout2: TLayout
+        inherited lblTitulo: TLabel
+          Size.Width = 154.000000000000000000
+          TextSettings.Font.StyleExt = {00060000000000000004000000}
+          Text = 'Consulta Cliente'
+        end
+      end
+    end
+  end
+end

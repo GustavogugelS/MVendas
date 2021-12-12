@@ -1,0 +1,3 @@
+- Schemas compactada para enviar ao aparelho android, manter sempre neste diretorio ou mudar no deploy no projeto;
+- libcrypto.so/libssl.so é utilizado para OpenSSL;
+- libXML2.so é utilizado para libXML;

@@ -1,0 +1,153 @@
+object frmCnsBase: TfrmCnsBase
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 522
+  ClientWidth = 315
+  Fill.Kind = Solid
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 3
+  object layConsulta: TLayout
+    Align = Client
+    Size.Width = 315.000000000000000000
+    Size.Height = 522.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object layEditBusca: TLayout
+      Align = Top
+      Position.Y = 50.000000000000000000
+      Size.Width = 315.000000000000000000
+      Size.Height = 42.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object edtBusca: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        Align = Client
+        TabOrder = 0
+        Margins.Left = 10.000000000000000000
+        Margins.Top = 5.000000000000000000
+        Margins.Right = 10.000000000000000000
+        Size.Width = 295.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        CharCase = ecUpperCase
+      end
+    end
+    object lvConsulta: TListView
+      ItemAppearanceClassName = 'TDynamicAppearance'
+      ItemEditAppearanceClassName = 'TDynamicAppearance'
+      HeaderAppearanceClassName = 'TListHeaderObjects'
+      FooterAppearanceClassName = 'TListHeaderObjects'
+      Align = Client
+      Size.Width = 315.000000000000000000
+      Size.Height = 430.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      ItemAppearance.ItemHeight = 45
+      ItemAppearanceObjects.ItemObjects.ObjectsCollection = <
+        item
+          AppearanceObjectName = 'Text1'
+          AppearanceClassName = 'TTextObjectAppearance'
+          Appearance.Font.Size = 11.000000000000000000
+          Appearance.TextAlign = Leading
+          Appearance.Width = 24.000000000000000000
+          Appearance.Height = 17.000000000000000000
+          Appearance.PlaceOffset.X = 5.000000000000000000
+          Appearance.PlaceOffset.Y = 2.000000000000000000
+        end
+        item
+          AppearanceObjectName = 'Text2'
+          AppearanceClassName = 'TTextObjectAppearance'
+          Appearance.Font.Size = 11.000000000000000000
+          Appearance.TextAlign = Leading
+          Appearance.Width = 243.000000000000000000
+          Appearance.Height = 17.000000000000000000
+          Appearance.PlaceOffset.X = 46.000000000000000000
+          Appearance.PlaceOffset.Y = 2.000000000000000000
+        end
+        item
+          AppearanceObjectName = 'Text3'
+          AppearanceClassName = 'TTextObjectAppearance'
+          Appearance.Font.Size = 11.000000000000000000
+          Appearance.TextAlign = Leading
+          Appearance.Width = 74.000000000000000000
+          Appearance.Height = 17.000000000000000000
+          Appearance.PlaceOffset.X = 5.000000000000000000
+          Appearance.PlaceOffset.Y = 25.000000000000000000
+        end
+        item
+          AppearanceObjectName = 'Text4'
+          AppearanceClassName = 'TTextObjectAppearance'
+          Appearance.Font.Size = 11.000000000000000000
+          Appearance.TextAlign = Leading
+          Appearance.Width = 65.000000000000000000
+          Appearance.Height = 17.000000000000000000
+          Appearance.PlaceOffset.X = 83.000000000000000000
+          Appearance.PlaceOffset.Y = 25.000000000000000000
+        end
+        item
+          AppearanceObjectName = 'Image5'
+          AppearanceClassName = 'TImageObjectAppearance'
+          Appearance.Width = 34.000000000000000000
+          Appearance.Height = 23.000000000000000000
+          Appearance.Align = Trailing
+          Appearance.PlaceOffset.X = -2.000000000000000000
+          Appearance.PlaceOffset.Y = 20.000000000000000000
+        end>
+      ItemAppearanceObjects.ItemEditObjects.ObjectsCollection = <
+        item
+          AppearanceObjectName = 'Text1'
+          AppearanceClassName = 'TTextObjectAppearance'
+        end>
+      OnItemClickEx = lvConsultaItemClickEx
+    end
+    object rectTopo: TRectangle
+      Align = MostTop
+      Fill.Color = xFF353858
+      Size.Width = 315.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
+      Stroke.Kind = None
+      object Layout2: TLayout
+        Align = Client
+        Size.Width = 315.000000000000000000
+        Size.Height = 50.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object Layout1: TLayout
+          Align = Client
+          Size.Width = 315.000000000000000000
+          Size.Height = 50.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          object btnVoltar: TSpeedButton
+            Align = Left
+            IconTintColor = claLavender
+            Position.Y = 1.000000000000000000
+            Size.Width = 48.000000000000000000
+            Size.Height = 48.000000000000000000
+            Size.PlatformDefault = False
+            StyleLookup = 'priortoolbutton'
+            OnClick = btnVoltarClick
+          end
+        end
+        object lblTitulo: TLabel
+          Align = Center
+          StyledSettings = [Family, Size]
+          Margins.Left = 10.000000000000000000
+          Size.Width = 87.000000000000000000
+          Size.Height = 50.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.StyleExt = {00060000000000000004000000}
+          TextSettings.FontColor = claLavender
+          TextSettings.HorzAlign = Center
+          Text = 'Consulta'
+          TabOrder = 1
+        end
+      end
+    end
+  end
+end
