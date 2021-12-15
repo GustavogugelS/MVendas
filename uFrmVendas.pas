@@ -267,11 +267,12 @@ type
     { Public declarations }
     function fTotaisCupom: boolean;
 
-    const
-      rCupomVazio: TCupom = ();
-      rCliCupomVazio: TCliCupom = ();
-      rProdutoVazio: TProdutoCupom = ();
   end;
+
+  const
+    rCupomVazio: TCupom = ();
+    rCliCupomVazio: TCliCupom = ();
+    rProdutoVazio: TProdutoCupom = ();
 
   var
     rCupom: TCupom;
