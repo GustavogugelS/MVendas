@@ -68,7 +68,10 @@ type
     procedure RelGerencial;
 
     {Funções de dincronismo}
-    function fSincProduto: Boolean;
+    function EnviarVenda: Boolean;
+    function ReceberProduto: Boolean;
+//    function ReceberCliente: Boolean;
+//    function ReceberUsuario: Boolean;
   end;
 
 var
@@ -672,9 +675,18 @@ begin
   end;
 end;
 
-function TdmPrincipal.fSincProduto: Boolean;
+function TdmPrincipal.ReceberProduto: Boolean;
 begin
 
+end;
+
+function TdmPrincipal.EnviarVenda: Boolean;
+var
+  venda: TNFCe;
+begin
+  venda := TNFCe.Create;
+  DadosDaNota(rCupom.nrDocumento, venda);
+  
 end;
 
 procedure TdmPrincipal.GravarConfiguracao(disp, ipServidor, portaServidor,
@@ -739,7 +751,8 @@ var
                                '    NR_DOCUMENTO = :NR_DOCUMENTO ';
 
     {Forma o DtEmissao}
-    rCupom.dtEmissao := rCupom.autDtProcessamento + ' ' + rCupom.autHrprocessamento;
+    rCupom.dtEmissao := rCupom.autDtProcessamento + ' ' +
+      rCupom.autHrprocessamento;
 
     qryUpdateNotaC.ParamByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
     qryUpdateNotaC.ParamByName('DANFE').AsString := rCupom.autChaveDanfe;
@@ -1067,7 +1080,7 @@ begin
     '    CAIXA_MOVIMENTO.TIPO, ' +
     '    CAIXA_MOVIMENTO.FINALIZADORA, ' +
     '    CASE WHEN CAIXA_MOVIMENTO.TIPO = ''R'' THEN ''REFORCO''  ' +
-    '         WHEN CAIXA_MOVIMENTO.TIP O = ''S'' THEN ''SUPRIMENTO'' ELSE FINALIZADORA.DESCRICAO ' +
+    '         WHEN CAIXA_MOVIMENTO.TIPO = ''S'' THEN ''SUPRIMENTO'' ELSE FINALIZADORA.DESCRICAO ' +
     '         END DESCRICAO, ' +
     '    SUM(CASE WHEN NOTAC.CANCELADO = 0 THEN CAIXA_MOVIMENTO.VL_TOTAL ELSE 0 END) VL_TOTAL, ' +
     '    SUM(CASE WHEN NOTAC.CANCELADO = 1 THEN CAIXA_MOVIMENTO.VL_TOTAL ELSE 0 END) VL_CANCELADO ' +

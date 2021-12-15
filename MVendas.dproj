@@ -307,6 +307,7 @@
             <Form>Form1</Form>
             <FormType>fmx</FormType>
         </DCCReference>
+        <DCCReference Include="Classes\Loading.pas"/>
         <JavaReference Include="Jar\gertec_classes_g700.jar">
             <Disabled/>
         </JavaReference>

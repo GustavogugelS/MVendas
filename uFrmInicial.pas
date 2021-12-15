@@ -61,6 +61,8 @@ procedure TfrmInicial.FormCreate(Sender: TObject);
 begin
   if fTemConfiguracao then
     pAbrirLogin;
+
+
 end;
 
 function TfrmInicial.fTemConfiguracao: Boolean;

@@ -33,6 +33,11 @@ object frmEnviarReceber: TfrmEnviarReceber
         Column = 0
         Control = Rectangle2
         Row = 1
+      end
+      item
+        Column = 0
+        Control = Rectangle3
+        Row = 2
       end>
     RowCollection = <
       item
@@ -40,6 +45,9 @@ object frmEnviarReceber: TfrmEnviarReceber
       end
       item
         Value = 50.000000000000000000
+      end
+      item
+        SizeStyle = Auto
       end
       item
         SizeStyle = Auto
@@ -52,11 +60,16 @@ object frmEnviarReceber: TfrmEnviarReceber
       Margins.Right = 25.000000000000000000
       Margins.Bottom = 25.000000000000000000
       Size.Width = 215.000000000000000000
-      Size.Height = 186.000000000000000000
+      Size.Height = 161.000000000000000000
       Size.PlatformDefault = False
       Stroke.Kind = None
       XRadius = 6.000000000000000000
       YRadius = 6.000000000000000000
+      object Label1: TLabel
+        Align = Center
+        Text = 'Label1'
+        TabOrder = 0
+      end
     end
     object Rectangle2: TRectangle
       Align = Client
@@ -66,11 +79,19 @@ object frmEnviarReceber: TfrmEnviarReceber
       Margins.Right = 25.000000000000000000
       Margins.Bottom = 25.000000000000000000
       Size.Width = 215.000000000000000000
-      Size.Height = 186.000000000000000000
+      Size.Height = 161.000000000000000000
       Size.PlatformDefault = False
       Stroke.Kind = None
       XRadius = 6.000000000000000000
       YRadius = 6.000000000000000000
+    end
+    object Rectangle3: TRectangle
+      Anchors = []
+      Position.X = 107.500000000000000000
+      Position.Y = 422.000000000000000000
+      Size.Width = 50.000000000000000000
+      Size.Height = 50.000000000000000000
+      Size.PlatformDefault = False
     end
   end
 end

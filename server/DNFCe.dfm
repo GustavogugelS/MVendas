@@ -20,37 +20,6 @@ object DtmNFCe: TDtmNFCe
     Left = 736
     Top = 17
   end
-  object ACBrNFeDANFCeFortes1: TACBrNFeDANFCeFortes
-    MostraStatus = False
-    Sistema = 'Projeto ACBr - www.projetoacbr.com.br'
-    MargemInferior = 0.800000000000000000
-    MargemSuperior = 0.800000000000000000
-    MargemEsquerda = 0.600000000000000000
-    MargemDireita = 0.510000000000000000
-    ExpandeLogoMarcaConfig.Altura = 0
-    ExpandeLogoMarcaConfig.Esquerda = 0
-    ExpandeLogoMarcaConfig.Topo = 0
-    ExpandeLogoMarcaConfig.Largura = 0
-    ExpandeLogoMarcaConfig.Dimensionar = False
-    ExpandeLogoMarcaConfig.Esticar = True
-    CasasDecimais.Formato = tdetInteger
-    CasasDecimais.qCom = 2
-    CasasDecimais.vUnCom = 2
-    CasasDecimais.MaskqCom = ',0.00'
-    CasasDecimais.MaskvUnCom = ',0.00'
-    TipoDANFE = tiNFCe
-    ImprimeCodigoEan = True
-    ImprimeQRCodeLateral = True
-    ImprimeLogoLateral = True
-    FormularioContinuo = True
-    FonteLinhaItem.Charset = DEFAULT_CHARSET
-    FonteLinhaItem.Color = clWindowText
-    FonteLinhaItem.Height = -9
-    FonteLinhaItem.Name = 'Lucida Console'
-    FonteLinhaItem.Style = []
-    Left = 200
-    Top = 32
-  end
   object ACBrNFeDANFeESCPOS1: TACBrNFeDANFeESCPOS
     Sistema = 'Projeto ACBr - www.projetoacbr.com.br'
     MargemInferior = 0.800000000000000000
@@ -110,31 +79,6 @@ object DtmNFCe: TDtmNFCe
     Rede.proxy_porta = 0
     Left = 88
     Top = 32
-  end
-  object sat: TACBrSATExtratoFortes
-    Sistema = 'CashMobile - www.cspautomacao.com.br'
-    MargemInferior = 4.000000000000000000
-    MargemSuperior = 2.000000000000000000
-    MargemEsquerda = 2.000000000000000000
-    MargemDireita = 2.000000000000000000
-    ExpandeLogoMarcaConfig.Altura = 0
-    ExpandeLogoMarcaConfig.Esquerda = 0
-    ExpandeLogoMarcaConfig.Topo = 0
-    ExpandeLogoMarcaConfig.Largura = 0
-    ExpandeLogoMarcaConfig.Dimensionar = False
-    ExpandeLogoMarcaConfig.Esticar = True
-    CasasDecimais.Formato = tdetInteger
-    CasasDecimais.qCom = 2
-    CasasDecimais.vUnCom = 2
-    CasasDecimais.MaskqCom = ',0.00'
-    CasasDecimais.MaskvUnCom = ',0.00'
-    MsgAppQRCode = 
-      'Consulte o QR Code pelo aplicativo  "De olho na nota", dispon'#237've' +
-      'l na AppStore (Apple) e PlayStore (Android)'
-    ImprimeQRCodeLateral = False
-    FormularioContinuo = True
-    Left = 200
-    Top = 104
   end
   object ACBrPAF: TACBrPAF
     LinesBuffer = 1000

@@ -364,7 +364,7 @@ begin
       DmNFCe := TdtmNFCe.Create(nil);
       retorno := TNFCeRetACBR.Create;
 
-      xml := fExisteNota(oCancNf.chaveDoc, oCancNf.idDispositivo, 1);
+      xml := fExisteNota(oCancNf.chaveDoc.ToInteger, oCancNf.idDispositivo.ToInteger, 1);
       if trim(xml) <> '' then
       begin
         retorno.autorizou := true;

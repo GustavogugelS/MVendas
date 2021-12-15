@@ -391,31 +391,25 @@ end;
 procedure TdmNfe.ObterDadosAutorizacao(Evento: tpEvento);
 begin
   if Evento = EMISSAO then
-    rCupom.autSituacaoNfce :=
-      ACBrNFe.WebServices.Enviar.cStat.ToString
+  begin
+    rCupom.autSituacaoNfce := ACBrNFe.WebServices.Enviar.cStat.ToString;
+    rCupom.autXmlVenda := ACBrNFe.NotasFiscais[0].XMLAssinado;
+    rCupom.autNrProtocolo := ACBrNFe.NotasFiscais[0].NFe.procNFe.nProt;
+  end
   else
+  begin
     rCupom.autSituacaoNfce :=
       ACBrNFe.WebServices.EnvEvento.EventoRetorno.retEvento.Items[0].RetInfEvento.cStat.ToString;
-
-  if Evento = EMISSAO then
-    rCupom.autXmlVenda :=
-      ACBrNFe.NotasFiscais[0].XMLAssinado
-  else
     rCupom.autXmlVenda :=
       ACBrNFe.WebServices.EnvEvento.EventoRetorno.retEvento.Items[0].RetInfEvento.XML;
-
-  if Evento = EMISSAO then
-    rCupom.autNrProtocolo :=
-      ACBrNFe.NotasFiscais[0].NFe.procNFe.nProt
-  else
     rCupom.autNrProtocolo :=
       ACBrNFe.WebServices.EnvEvento.EventoRetorno.retEvento.Items[0].RetInfEvento.nProt;
+  end;
 
   rCupom.autChaveDanfe := ACBrNFe.NotasFiscais[0].NFe.procNFe.chNFe;
   rCupom.autDtProcessamento := FormatDateTime('dd/mm/yyyy', Date);
   rCupom.autHrprocessamento := FormatDateTime('hh:nn:ss', Now);
   rCupom.autRecibo := ACBrNFe.WebServices.Recibo.NFeRetorno.nRec;
-  pLog('Terminou obter dados', '');
 end;
 
 procedure TdmNfe.CancelarNota;

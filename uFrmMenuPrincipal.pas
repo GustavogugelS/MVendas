@@ -41,7 +41,7 @@ var
 implementation
 
 uses
-  uFrmVendas, uDmNfe;
+  uFrmVendas, uDmNfe, Loading;
 
 {$R *.fmx}
 
@@ -49,7 +49,8 @@ procedure TfrmMenuPrincipal.Layout3Click(Sender: TObject);
 begin
 //  dmNfe.ACBrNFe.WebServices.StatusServico.Executar;
 //  ShowMessage(IntToStr(dmNfe.ACBrNFe.WebServices.StatusServico.cStat));
-  pAbrirPDV;
+//  pAbrirPDV;
+  TLoading.Show(Self, 'Carregando');
 end;
 
 procedure TfrmMenuPrincipal.Layout4Click(Sender: TObject);

@@ -4,10 +4,10 @@ interface
 
 uses
   System.SysUtils, system.math,
-  System.Classes, ACBrNFeDANFEClass, ACBrDANFCeFortesFr,
+  System.Classes, ACBrNFeDANFEClass,
   ACBrBase, ACBrDFe, ACBrNFe, UNFCeClass, ACBrDFeReport, ACBrDFeDANFeReport,
   ACBrPosPrinter, ACBrNFeDANFeESCPOS, ACBrSATExtratoClass,
-  ACBrSATExtratoReportClass, ACBrSATExtratoFortesFr, ACBrSAT,pcnCFe,System.DateUtils, UBaseController,
+  ACBrSATExtratoReportClass, ACBrSAT,pcnCFe,System.DateUtils, UBaseController,
   FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Param,
   FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf, FireDAC.DApt.Intf,
   FireDAC.Stan.Async, FireDAC.DApt, Data.DB, FireDAC.Comp.DataSet,
@@ -29,11 +29,9 @@ type
 
   TdtmNFCe = class(TDataModule)
     ACBrNFe1: TACBrNFe;
-    ACBrNFeDANFCeFortes1: TACBrNFeDANFCeFortes;
     ACBrNFeDANFeESCPOS1: TACBrNFeDANFeESCPOS;
     ACBrPosPrinter1: TACBrPosPrinter;
     ACBrSAT1: TACBrSAT;
-    sat: TACBrSATExtratoFortes;
     ACBrPAF: TACBrPAF;
     ACBrEAD: TACBrEAD;
     procedure ACBrNFe1TransmitError(const HttpError, InternalError: Integer;
@@ -49,8 +47,6 @@ type
     function fCancelarNFCe(ADadosCancelamento: TNFCeCancNFCE;
       config: TNFCeEmpresa; var retorno: TNFCeRetACBR): Boolean;
 
-    function GerarPDF(xml:string; config : TNFCeEmpresa): string;
-    function GerarPDFCfe(xml, nrDocumento, idDispositivo :String):String;
     function GerarXML(numero, serie: integer): string;
 
   	function ArredondarFloatABNT(ValorNormal: Real; CasasDecimais: Integer): Real;
@@ -274,7 +270,7 @@ begin
 
 
   finally
-    result := retorno ;
+    result := retorno.autorizou ;
 
   end;
 
@@ -1049,63 +1045,6 @@ begin
                                ONFe.procNFe.digVal,
                                4);
   ONFe.infNFeSupl.qrCode := url;
-
-end;
-
-function TdtmNFCe.GerarPDF(xml :string; config : TNFCeEmpresa): string;
-var
-  OldCfgDANFE: TACBrDFeDANFeReport;
-begin
-
-  OldCfgDANFE := ACBrNFe1.DANFE;
-  try
-    ACBrNFe1.DANFE := ACBrNFeDANFCeFortes1;
-    Self.ConfigurarNFe(config);
-
-    ACBrNFe1.NotasFiscais.Clear;
-    ACBrNFe1.NotasFiscais.LoadFromString(XML);
-    ACBrNFe1.NotasFiscais.ImprimirPDF;
-
-    Result :=
-      ACBrNFe1.DANFE.PathPDF +
-      ACBrUtil.OnlyNumber(ACBrNFe1.NotasFiscais[0].NFe.infNFe.ID) +
-      '-nfe.pdf';
-
-    if not FileExists(Result) then
-      raise Exception.Create('Arquivo PDF não encontrado no servidor!');
-  finally
-    ACBrNFe1.DANFE := OldCfgDANFE;
-  end;
-end;
-
-function TdtmNFCe.GerarPDFCfe(xml,nrDocumento, idDispositivo :String): String;
-var
-  cfe :Tcfe;
-  caminho : String;
-begin
-
-  caminho := ExtractFilePath(ParamStr(0)) + '\Documentos\CFe\' + idDispositivo + '\' +
-                 IntToStr(YearOf(Date)) + '\' +
-                 FormatFloat('00',MonthOf(Date)) + '\' +
-                 FormatFloat('00',DayOf(Date)) + '\' ;
-
-
-  ForceDirectories(Caminho);
-
-  try
-    cfe := tcfe.Create;
-    cfe.SetXMLString(xml);
-
-
-    sat.Filtro  := fiPDF;
-    sat.PathPDF := Caminho;
-    sat.NomeDocumento := nrDocumento + '.PDF';
-    sat.ImprimirExtrato(cfe);
-  finally
-    cfe.Free;
-  end;
-
-  result := caminho + nrDocumento + '.PDF';
 
 end;
 

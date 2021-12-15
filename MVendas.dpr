@@ -24,7 +24,8 @@ uses
   uFrmCnsNota in 'uFrmCnsNota.pas' {frmCnsNota},
   uFrmCnsCliente in 'uFrmCnsCliente.pas' {frmCnsCliente},
   uDmNfe in 'uDmNfe.pas' {dmNfe: TDataModule},
-  uFrmEnviarReceber in 'uFrmEnviarReceber.pas' {Form1};
+  uFrmEnviarReceber in 'uFrmEnviarReceber.pas' {Form1},
+  Loading in 'Classes\Loading.pas';
 
 {$R *.res}
 
