@@ -28,9 +28,14 @@ type
     Label3: TLabel;
     procedure Layout3Click(Sender: TObject);
     procedure Layout4Click(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char;
+      Shift: TShiftState);
+    procedure Layout5Click(Sender: TObject);
   private
     { Private declarations }
     procedure pAbrirPDV;
+    procedure SairMenuPrincipal;
+    procedure IniciarSincronismo;
   public
     { Public declarations }
   end;
@@ -41,29 +46,72 @@ var
 implementation
 
 uses
-  uFrmVendas, uDmNfe, Loading;
+  uFrmVendas, uDmNfe, Loading, uFrmLogin;
 
 {$R *.fmx}
 
+procedure TfrmMenuPrincipal.FormKeyDown(Sender: TObject; var Key: Word;
+  var KeyChar: Char; Shift: TShiftState);
+begin
+  if key = vkHardwareBack then
+  begin           
+        
+  end;
+end;
+
+procedure TfrmMenuPrincipal.IniciarSincronismo;
+begin
+  Tloading.Show(Self, 'Aguarde');
+  TThread.CreateAnonymousThread(procedure
+  begin
+    sleep(10000);
+    //TODO: Chamar Sincronismo
+    
+    TThread.Synchronize(nil, procedure
+    begin
+    
+      TLoading.Hide;
+      ShowMessage('Sincronismo concluído');
+      
+    end);
+      
+  end).Start;
+  
+end;
+
 procedure TfrmMenuPrincipal.Layout3Click(Sender: TObject);
 begin
-//  dmNfe.ACBrNFe.WebServices.StatusServico.Executar;
-//  ShowMessage(IntToStr(dmNfe.ACBrNFe.WebServices.StatusServico.cStat));
-//  pAbrirPDV;
-  TLoading.Show(Self, 'Carregando');
+  pAbrirPDV;
 end;
 
 procedure TfrmMenuPrincipal.Layout4Click(Sender: TObject);
 begin
-  ShowMessage('Válido até: '+ FormatDateBr(dmNfe.ACBrNFe.SSL.CertDataVenc));
+//  ShowMessage('Válido até: '+ FormatDateBr(dmNfe.ACBrNFe.SSL.CertDataVenc));
+  ShowMessage('Funcionalidade indisponível');
+end;
+
+procedure TfrmMenuPrincipal.Layout5Click(Sender: TObject);
+begin
+  IniciarSincronismo;
 end;
 
 procedure TfrmMenuPrincipal.pAbrirPDV;
 var
   frmVendas: TfrmVendas;
 begin
+  if Assigned(frmVendas) then
+    frmVendas.Free;
+
   frmVendas := TFrmVendas.Create(self);
   frmVendas.Show;
+end;
+
+procedure TfrmMenuPrincipal.SairMenuPrincipal;
+begin
+  if not Assigned(frmLogin) then
+    Application.CreateForm(TFrmLogin, frmLogin);
+
+  frmLogin.Show;
 end;
 
 end.

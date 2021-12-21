@@ -202,7 +202,6 @@ type
     procedure FormVirtualKeyboardHidden(Sender: TObject; KeyboardVisible: Boolean; const Bounds: TRect);
     procedure FormVirtualKeyboardShown(Sender: TObject; KeyboardVisible: Boolean; const Bounds: TRect);
     procedure btnLimpaCodigoClick(Sender: TObject);
-    procedure layBtnSairClick(Sender: TObject);
     procedure rectQtdClick(Sender: TObject);
     procedure imgListaClick(Sender: TObject);
     procedure lvItensItemClickEx(const Sender: TObject; ItemIndex: Integer;
@@ -238,19 +237,20 @@ type
     procedure btnAplicarQuantidadeClick(Sender: TObject);
     procedure btnCancelarQtdClick(Sender: TObject);
     procedure layBtnGerencialClick(Sender: TObject);
+    procedure layBtnSairClick(Sender: TObject);
+    procedure imgBarCodeClick(Sender: TObject);
   private
     procedure pPosicionarUltimoItemListView;
-    procedure pGravarVendaBanco;
     procedure pAdicionarItemCupom(cdBarras: String);
     procedure pAdicionarItemLista(const sequencia: Integer; const Codigo, Barras, Nome: string; const vUnit, Total: Currency; const Qtd: Double);
     procedure pAtualizarTela;
     procedure pCarregarVendaAberta;
     function fCarregarItensVenda: Boolean;
-    function fGravarItemBanco: Boolean;
     function fReceberValor(const tipo: tpFinalizadora; const valor: Currency): Boolean;
     function fGravarPagBanco(const cdFinalizadora: Integer; const valor: Currency): Boolean;
     function ValidarDesc: Boolean;
 
+    procedure SairVenda;
     procedure pIniciarPagamento;
     procedure pVoltarVendas;
     procedure pAdicionarPagLista(descricao: String; valor: Currency);
@@ -289,7 +289,7 @@ implementation
 
 uses
   uFrmLogin, uFrmEditor, uDmPrincipal, uFrmMensagem, uUtilitarios,
-  uConsultaBanco, uFormat, uFrmCnsProduto, uFrmCnsNota, uFrmCnsCliente, uDmNfe;
+  uConsultaBanco, uFormat, uFrmCnsProduto, uFrmCnsNota, uFrmCnsCliente, uDmNfe, uFrmMenuPrincipal, uFrmLeitorBarcode;
 
 {$R *.fmx}
 
@@ -327,6 +327,7 @@ end;
 procedure TfrmVendas.AplicarQuantidade;
 begin
   lblQuantidade.Text := IfThen(edtQuantidade.Text.ToDouble > 0, edtQuantidade.Text, '1');
+  rProdutoCupom.qtd := lblQuantidade.Text.ToDouble;
   pFecharLays;
 end;
 
@@ -438,65 +439,6 @@ begin
   end;
 end;
 
-function TfrmVendas.fGravarItemBanco: Boolean;
-begin
-  try
-    with dmPrincipal do
-    begin
-      try
-        qryNotaI.Close;
-        qryNotaI.ParamByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
-        qryNotaI.Open;
-        qryNotaI.Append;
-        
-        rProdutoCupom.nrSequencia := fAchaNrSequencia(rCupom.nrDocumento, 'NOTAI');
-
-        {Dados de produto}
-        qryNotaI.FieldByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
-        qryNotaI.FieldByName('NR_SEQUENCIA').AsInteger := rProdutoCupom.nrSequencia;
-        qryNotaI.FieldByName('CD_PRODUTO').AsString := rProdutoCupom.cdProduto;
-        qryNotaI.FieldByName('CD_BARRAS').AsString := rProdutoCupom.cdBarras;
-        qryNotaI.FieldByName('DESCRICAO').AsString := rProdutoCupom.descricao;
-        qryNotaI.FieldByName('QTD').AsFloat := lblQuantidade.Text.ToDouble;
-        qryNotaI.FieldByName('VL_BRUTO').AsCurrency := rProdutoCupom.preco;
-        qryNotaI.FieldByName('PESO_LIQUIDO').AsFloat := rProdutoCupom.pesoL;
-        qryNotaI.FieldByName('UN').AsString := rProdutoCupom.un;
-        qryNotaI.FieldByName('NCM').AsString := rProdutoCupom.ncm;
-
-        {Impostos}
-        qryNotaI.FieldByName('CST_ICMS').AsString := rProdutoCupom.cst;
-        qryNotaI.FieldByName('ALIQ_ICMS').AsCurrency := rProdutoCupom.aliqIcms;
-        qryNotaI.FieldByName('PC_REDUCAO').AsCurrency := rProdutoCupom.pcReducao;
-        qryNotaI.FieldByName('CST_PISCOFINS').AsString := rProdutoCupom.cstPisCofins;
-        qryNotaI.FieldByName('ALIQ_PIS').AsCurrency := empresa.AliqPis;
-        qryNotaI.FieldByName('ALIQ_COFINS').AsCurrency := empresa.AliqCofins;
-        qryNotaI.FieldByName('CEST').AsString := rProdutoCupom.cest;
-        qryNotaI.FieldByName('CFOP').AsInteger := rProdutoCupom.cfop;
-
-        {Totais}
-        qryNotaI.FieldByName('VL_LIQUIDO').AsCurrency := rProdutoCupom.preco;
-        qryNotaI.FieldByName('VL_TOTAL').AsCurrency :=
-          SimpleRoundTo(rProdutoCupom.preco * qryNotaI.FieldByName('QTD').AsFloat, -2);
-
-        {Atualiza Record}
-        rProdutoCupom.vlTotal := qryNotaI.FieldByName('VL_TOTAL').AsCurrency;
-        rProdutoCupom.qtd := qryNotaI.FieldByName('QTD').AsFloat;
-
-        qryNotaI.Post;
-        result := True;
-      finally
-        qryNotaI.Close;
-      end;
-    end;
-
-  except on E: Exception do
-    begin
-      result := False;
-      raise Exception.Create('Erro ao inserir o item');
-    end;
-  end;
-end;
-
 function TfrmVendas.fGravarPagBanco(const cdFinalizadora: Integer;
   const valor: Currency): Boolean;
 begin
@@ -551,6 +493,7 @@ begin
   if key = vkHardwareBack then
   begin
     pFecharLays;
+    Key := 0;
   end;
 end;
 
@@ -588,6 +531,19 @@ begin
 
   {SUBTOTAL}
   lblValorPagar.Text := FormatCurr('0.00', rCupom.vlSubTotal);
+end;
+
+procedure TfrmVendas.imgBarCodeClick(Sender: TObject);
+begin
+  Application.CreateForm(TfrmLeitorBarcode, frmLeitorBarcode);
+
+  frmLeitorBarcode.ShowModal(
+    procedure(ModalResult: TModalResult)
+    begin
+      if ModalResult = mrOk then
+        pAdicionarItemCupom(frmLeitorBarcode.retorno);
+      frmLeitorBarcode.Free;
+    end);
 end;
 
 procedure TfrmVendas.imgListaClick(Sender: TObject);
@@ -628,7 +584,7 @@ end;
 
 procedure TfrmVendas.layBtnSairClick(Sender: TObject);
 begin
-  ModalResult := mrOk;
+  SairVenda;
 end;
 
 procedure TfrmVendas.layBtnCancelarClick(Sender: TObject);
@@ -759,7 +715,6 @@ end;
 
 procedure TfrmVendas.pAdicionarItemCupom(cdBarras: String);
 begin
-  rProdutoCupom := rProdutoVazio;
   rProdutoCupom := dmPrincipal.fBuscarProduto(cdBarras);
 
   if (cdBarras = '') or (rProdutoCupom.cdBarras = '') then
@@ -769,9 +724,9 @@ begin
   end;
 
   if rCupom.nrDocumento = 0 then
-    pGravarVendaBanco;
+    dmPrincipal.GravarVendaBanco;
 
-  if fGravarItemBanco then
+  if dmPrincipal.GravarItemBanco then
     pAdicionarItemLista(rProdutoCupom.nrSequencia,
                         rProdutoCupom.cdProduto,
                         rProdutoCupom.cdBarras,
@@ -782,6 +737,8 @@ begin
 
   edtCdProduto.Text := '';
   edtQuantidade.Text := '1';
+  rProdutoCupom := rProdutoVazio;
+
   fTotaisCupom;
 end;
 
@@ -937,7 +894,7 @@ procedure TfrmVendas.pFinalizarVenda;
 begin
   TThread.CreateAnonymousThread(procedure
   begin
-    dmPrincipal.pCalcularImposto;
+    dmPrincipal.CalcularImposto;
     dmNfe.EmitirNota;
     dmPrincipal.AtualizarStatusNota;
 
@@ -946,35 +903,6 @@ begin
       pLimparDados;
     end);
   end).Start;
-end;
-
-procedure TfrmVendas.pGravarVendaBanco;
-begin
-  {Inicia NOTAC}
-  with dmPrincipal do
-  begin
-    try
-      qryNotaC.ParamByName('NR_DOCUMENTO').AsInteger := 0;
-      qryNotaC.Open;
-      qryNotaC.Append;
-      qryNotaC.FieldByName('NR_NOTA').AsInteger := fAchaNrNota;
-      qryNotaC.FieldByName('NR_SERIE').AsInteger := configuracao.Serie;
-      qryNotaC.FieldByName('CANCELADO').AsInteger := 0;
-      qryNotaC.FieldByName('STATUS').AsInteger := 1;
-      qryNotaC.FieldByName('MODELO').AsInteger := configuracao.Modelo;
-      qryNotaC.FieldByName('CD_CAIXA').AsInteger := 1;
-      qryNotaC.FieldByName('DTH_VENDA').AsString := FormatDateTime('dd/mm/yyyy hh:mm', now);
-      qryNotaC.FieldByName('CD_CLIENTE').AsInteger := 1;
-      qryNotaC.Post;
-
-      rCupom.nrDocumento := fAchaNrDocumento;
-      rCupom.nrNota := qryNotaC.FieldByName('NR_NOTA').AsInteger;
-
-      qryNotaC.Close;
-    except on E: Exception do
-      raise Exception.Create('Erro ao iniciar o cabeçalho: ' + e.Message);
-    end;
-  end;
 end;
 
 procedure TfrmVendas.pIniciarPagamento;
@@ -1128,6 +1056,14 @@ end;
 procedure TfrmVendas.RoundRect1Click(Sender: TObject);
 begin
   pIniciarPagamento;
+end;
+
+procedure TfrmVendas.SairVenda;
+begin
+  if not Assigned(frmMenuPrincipal) then
+    Application.CreateForm(TfrmMenuPrincipal, frmMenuPrincipal);
+
+  frmMenuPrincipal.Show;
 end;
 
 end.

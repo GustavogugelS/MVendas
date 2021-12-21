@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Objects,
   FMX.TabControl, FMX.Layouts, FMX.Controls.Presentation, FMX.StdCtrls, FMX.Edit,
-  System.Actions, FMX.ActnList;
+  System.Actions, FMX.ActnList, FMX.Android.Permissions;
 
 type
   TfrmLogin = class(TForm)
@@ -45,6 +45,7 @@ type
     ActionList1: TActionList;
     actTabLogin: TChangeTabAction;
     actTabConfig: TChangeTabAction;
+    AndroidPermissions: TAndroidPermissions;
     procedure FormCreate(Sender: TObject);
     procedure btnEntrarClick(Sender: TObject);
     procedure btnConfirmarClick(Sender: TObject);
@@ -97,7 +98,6 @@ begin
   if not Assigned(FrmMenuPrincipal) then
     Application.CreateForm(TfrmMenuPrincipal, frmMenuPrincipal);
 
-  Application.MainForm := frmMenuPrincipal;
   frmMenuPrincipal.Show;
 end;
 

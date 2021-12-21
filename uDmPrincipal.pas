@@ -12,7 +12,7 @@ uses
   FireDAC.Stan.ExprFuncs, FireDAC.Comp.UI, uFrmVendas, UNFCeClass,
   MVCFramework.RESTClient, System.JSON, ACBrBase, ACBrDFeReport,
   ACBrDFeDANFeReport, ACBrNFeDANFEClass, ACBrNFeDANFeESCPOS, ACBrPosPrinter,
-  ACBrPosPrinterGEDI;
+  ACBrPosPrinterGEDI, System.Math;
 
 type
 
@@ -53,6 +53,8 @@ type
     function fControleCaixa(const tipo: Integer): Boolean;
     function fGravarCaixaMov(const tipo: String; const cdFinalizadora: Integer; const valor: Currency): Boolean;
     function fMarcarFavorito(tabela, where, chave: String; favorito: Integer): Boolean;
+    function GravarVendaBanco: Boolean;
+    function GravarItemBanco: Boolean;
 
     procedure GravarConfiguracao(disp, ipServidor, portaServidor, Cnpj: String);
     procedure pDeletarVendaBanco;
@@ -61,7 +63,7 @@ type
     procedure pRatearDescontoItem(const vlDesconto: Currency);
     procedure pLimparDesconto;
     procedure AtualizarStatusNota(const tipo: Integer = 0);
-    procedure pCalcularImposto;
+    procedure CalcularImposto;
     procedure pCarregarDadosAut;
     procedure pCarregarDadosCliente;
     procedure ConfigurarPosPrinter;
@@ -729,6 +731,93 @@ begin
   end;
 end;
 
+function TdmPrincipal.GravarItemBanco: Boolean;
+begin
+  try
+
+    try
+      qryNotaI.Close;
+      qryNotaI.ParamByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
+      qryNotaI.Open;
+      qryNotaI.Append;
+
+      rProdutoCupom.nrSequencia := fAchaNrSequencia(rCupom.nrDocumento, 'NOTAI');
+
+      {Dados de produto}
+      qryNotaI.FieldByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
+      qryNotaI.FieldByName('NR_SEQUENCIA').AsInteger := rProdutoCupom.nrSequencia;
+      qryNotaI.FieldByName('CD_PRODUTO').AsString := rProdutoCupom.cdProduto;
+      qryNotaI.FieldByName('CD_BARRAS').AsString := rProdutoCupom.cdBarras;
+      qryNotaI.FieldByName('DESCRICAO').AsString := rProdutoCupom.descricao;
+      qryNotaI.FieldByName('QTD').AsFloat := rProdutoCupom.qtd;
+      qryNotaI.FieldByName('VL_BRUTO').AsCurrency := rProdutoCupom.preco;
+      qryNotaI.FieldByName('PESO_LIQUIDO').AsFloat := rProdutoCupom.pesoL;
+      qryNotaI.FieldByName('UN').AsString := rProdutoCupom.un;
+      qryNotaI.FieldByName('NCM').AsString := rProdutoCupom.ncm;
+
+      {Impostos}
+      qryNotaI.FieldByName('CST_ICMS').AsString := rProdutoCupom.cst;
+      qryNotaI.FieldByName('ALIQ_ICMS').AsCurrency := rProdutoCupom.aliqIcms;
+      qryNotaI.FieldByName('PC_REDUCAO').AsCurrency := rProdutoCupom.pcReducao;
+      qryNotaI.FieldByName('CST_PISCOFINS').AsString := rProdutoCupom.cstPisCofins;
+      qryNotaI.FieldByName('ALIQ_PIS').AsCurrency := empresa.AliqPis;
+      qryNotaI.FieldByName('ALIQ_COFINS').AsCurrency := empresa.AliqCofins;
+      qryNotaI.FieldByName('CEST').AsString := rProdutoCupom.cest;
+      qryNotaI.FieldByName('CFOP').AsInteger := rProdutoCupom.cfop;
+
+      {Totais}
+      qryNotaI.FieldByName('VL_LIQUIDO').AsCurrency := rProdutoCupom.preco;
+      qryNotaI.FieldByName('VL_TOTAL').AsCurrency :=
+        SimpleRoundTo(rProdutoCupom.preco * rProdutoCupom.qtd, -2);
+
+      {Atualiza Record}
+      rProdutoCupom.vlTotal := qryNotaI.FieldByName('VL_TOTAL').AsCurrency;
+      rProdutoCupom.qtd := qryNotaI.FieldByName('QTD').AsFloat;
+
+      qryNotaI.Post;
+      result := True;
+    finally
+      qryNotaI.Close;
+    end;
+
+
+  except on E: Exception do
+    begin
+      result := False;
+      raise Exception.Create('Erro ao inserir o item');
+    end;
+  end;
+end;
+
+function TdmPrincipal.GravarVendaBanco: Boolean;
+begin
+  {Inicia NOTAC}
+  with dmPrincipal do
+  begin
+    try
+      qryNotaC.ParamByName('NR_DOCUMENTO').AsInteger := 0;
+      qryNotaC.Open;
+      qryNotaC.Append;
+      qryNotaC.FieldByName('NR_NOTA').AsInteger := fAchaNrNota;
+      qryNotaC.FieldByName('NR_SERIE').AsInteger := configuracao.Serie;
+      qryNotaC.FieldByName('CANCELADO').AsInteger := 0;
+      qryNotaC.FieldByName('STATUS').AsInteger := 1;
+      qryNotaC.FieldByName('MODELO').AsInteger := configuracao.Modelo;
+      qryNotaC.FieldByName('CD_CAIXA').AsInteger := 1;
+      qryNotaC.FieldByName('DTH_VENDA').AsString := FormatDateTime('dd/mm/yyyy hh:mm', now);
+      qryNotaC.FieldByName('CD_CLIENTE').AsInteger := 1;
+      qryNotaC.Post;
+
+      rCupom.nrDocumento := fAchaNrDocumento;
+      rCupom.nrNota := qryNotaC.FieldByName('NR_NOTA').AsInteger;
+
+      qryNotaC.Close;
+    except on E: Exception do
+      raise Exception.Create('Erro ao iniciar o cabeçalho: ' + e.Message);
+    end;
+  end;
+end;
+
 procedure TdmPrincipal.AtualizarStatusNota(const tipo: Integer);
 var
   qryUpdateNotaC: TFDquery;
@@ -830,7 +919,7 @@ begin
   end;
 end;
 
-procedure TdmPrincipal.pCalcularImposto;
+procedure TdmPrincipal.CalcularImposto;
 var
 	qryCalcImposto: TFDquery;
 begin

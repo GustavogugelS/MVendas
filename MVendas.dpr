@@ -25,7 +25,8 @@ uses
   uFrmCnsCliente in 'uFrmCnsCliente.pas' {frmCnsCliente},
   uDmNfe in 'uDmNfe.pas' {dmNfe: TDataModule},
   uFrmEnviarReceber in 'uFrmEnviarReceber.pas' {Form1},
-  Loading in 'Classes\Loading.pas';
+  Loading in 'Classes\Loading.pas',
+  uFrmLeitorBarcode in 'uFrmLeitorBarcode.pas' {frmLeitorBarcode};
 
 {$R *.res}
 
@@ -33,6 +34,5 @@ begin
   Application.Initialize;
   Application.CreateForm(TdmPrincipal, dmPrincipal);
   Application.CreateForm(TfrmInicial, frmInicial);
-  Application.CreateForm(TdmNfe, dmNfe);
   Application.Run;
 end.
