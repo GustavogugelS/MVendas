@@ -280,7 +280,6 @@
         <DCCReference Include="Classes\uFormat.pas"/>
         <DCCReference Include="Classes\uImpressao.pas"/>
         <DCCReference Include="Classes\uUtilitarios.pas"/>
-        <DCCReference Include="Comum\UNFCeClass.pas"/>
         <DCCReference Include="Classes\Androidapi.JNI.Toast.pas"/>
         <DCCReference Include="uFrmCnsBase.pas">
             <Form>frmCnsBase</Form>

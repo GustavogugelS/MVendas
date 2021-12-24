@@ -9,7 +9,7 @@ uses
   Data.DB, FireDAC.Comp.Client, uConfiguracao,
   FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt,
   FireDAC.Comp.DataSet, FireDAC.Phys.SQLite, FireDAC.Phys.SQLiteDef,
-  FireDAC.Stan.ExprFuncs, FireDAC.Comp.UI, uFrmVendas, UNFCeClass,
+  FireDAC.Stan.ExprFuncs, FireDAC.Comp.UI, uFrmVendas,
   MVCFramework.RESTClient, System.JSON, ACBrBase, ACBrDFeReport,
   ACBrDFeDANFeReport, ACBrNFeDANFEClass, ACBrNFeDANFeESCPOS, ACBrPosPrinter,
   ACBrPosPrinterGEDI, System.Math, uVenda;
@@ -47,7 +47,6 @@ type
     function fAchaNrDocumento: Integer;
     function fBuscarProduto(const cdBarras: String): TProdutoCupom;
     function DadosDaNota(const nrDocumento: Integer; var Nota: TVenda): Boolean;
-    function fCancelarNota(const nrDocumento: Integer): Boolean;
     function fDocumentoAberto: Integer;
     function fCalcularTotaisCupom: Boolean;
     function fControleCaixa(const tipo: Integer): Boolean;
@@ -248,80 +247,6 @@ begin
   finally
     qryTotalCupom.Close;
     qryNotaC.Close;
-  end;
-end;
-
-function TdmPrincipal.fCancelarNota(const nrDocumento: Integer): Boolean;
-var
-  NotaCancelamento: TNFCeCancNFCE;
-  FCli: MVCFramework.RESTClient.TRESTClient;
-  FResp: MVCFramework.RESTClient.IRESTResponse;
-  JsonObject: TJSONObject;
-
-  procedure pBuscarDadosAut(var oCanc: TNFCeCancNFCE);
-  var
-    qryDadosAut: TFDQuery;
-  begin
-    try
-      qryDadosAut := TFDQuery.Create(nil);
-      qryDadosAut.Connection := conexao;
-      qryDadosAut.Open('SELECT  ' +
-                       '    DANFE,  ' +
-                       '    LOTE,  ' +
-                       '    PROTOCOLO, ' +
-                       '    XML ' +
-                       'FROM  ' +
-                       '    NOTAC  ' +
-                       'WHERE  ' +
-                       '    NR_DOCUMENTO =  ' + nrDocumento.ToString);
-      if qryDadosAut.FieldByName('PROTOCOLO').AsString <> '' then
-      begin
-        oCanc.chaveDanfe := qryDadosAut.FieldByName('DANFE').AsString;
-        oCanc.protocolo := qryDadosAut.FieldByName('PROTOCOLO').AsString;
-        oCanc.lote := qryDadosAut.FieldByName('LOTE').AsString;
-        oCanc.xml := qryDadosAut.FieldByName('XML').AsString;
-      end;
-    finally
-      qryDadosAut.Free;
-    end;
-  end;
-
-begin
-  try
-    try
-      FCli := MVCFramework.RESTClient.TRESTClient.create(configuracao.ipServidor,
-        configuracao.portaServidor);
-      FCli.ConnectionTimeOut(5000);
-
-      NotaCancelamento := TNFCeCancNFCE.Create;
-      pBuscarDadosAut(NotaCancelamento);
-
-      if NotaCancelamento.protocolo = '' then
-        Exit;
-
-      FResp := FCli.doPOST('/ServerApi/CancelaNFCe/' + empresa.Cnpj, [], NotaCancelamento.AsJsonString);
-      JsonObject := TJSONObject.ParseJSONValue(TEncoding.ASCII.GetBytes(FResp.BodyAsString), 0) as TJSONObject;
-
-      rCupom.autNrProtocolo := JsonObject.Values['protocolo'].Value;
-      rCupom.autDtProcessamento := JsonObject.Values['dt_autorizacao'].Value;
-      rCupom.autHrprocessamento := JsonObject.Values['hr_autorizacao'].Value;
-      rCupom.autXmlVenda := JsonObject.Values['xml'].Value;
-
-      if JsonObject.Values['autorizou'].Value = 'true' then
-      begin
-        AtualizarStatusNota(2);
-        result := True;
-      end
-
-    finally
-      NotaCancelamento.Free;
-    end;
-
-  except on E: Exception do
-    begin
-      result := False;
-      Log('fCancelarNota', E.Message);
-    end;
   end;
 end;
 

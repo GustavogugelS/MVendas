@@ -17,7 +17,6 @@ uses
   uFormat in 'Classes\uFormat.pas',
   uImpressao in 'Classes\uImpressao.pas',
   uUtilitarios in 'Classes\uUtilitarios.pas',
-  UNFCeClass in 'Comum\UNFCeClass.pas',
   Androidapi.JNI.Toast in 'Classes\Androidapi.JNI.Toast.pas',
   uFrmCnsBase in 'uFrmCnsBase.pas' {frmCnsBase},
   uFrmCnsProduto in 'uFrmCnsProduto.pas' {frmCnsProduto},

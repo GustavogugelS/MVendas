@@ -4,7 +4,7 @@ interface
 
 uses
   System.SysUtils, System.Classes, ACBrBase, ACBrDFe, ACBrNFe, System.Zip,
-  ACBrUtil, System.IoUtils, pcnConversao, blcksock, UNFCeClass,
+  ACBrUtil, System.IoUtils, pcnConversao, blcksock,
   pcnConversaoNfe, ACBrDFeReport, ACBrDFeDANFeReport, ACBrNFeDANFEClass,
   ACBrNFeDANFeESCPOS, StrUtils, uVenda;
 
