@@ -16,7 +16,7 @@ interface
     var
       util: TUtilitarios;
 
-    procedure pLog(const funcao, erro: String);
+    procedure Log(const funcao, erro: String);
     procedure pCriardir;
     procedure pAddLista(lista: TListView; texto: String; indice: Integer = 0);
     procedure Teclado(edt: TEdit);
@@ -61,7 +61,7 @@ begin
   end;
 end;
 
-procedure pLog(const funcao, erro: String);
+procedure Log(const funcao, erro: String);
 var
   dir: String;
   arq: TextFile;

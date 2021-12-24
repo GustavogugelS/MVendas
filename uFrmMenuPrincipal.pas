@@ -99,10 +99,13 @@ procedure TfrmMenuPrincipal.pAbrirPDV;
 var
   frmVendas: TfrmVendas;
 begin
+  if not Assigned(dmNfe) then
+    Application.CreateForm(TdmNfe, dmNfe);
+
   if Assigned(frmVendas) then
     frmVendas.Free;
 
-  frmVendas := TFrmVendas.Create(self);
+  Application.CreateForm(TfrmVendas, frmVendas);
   frmVendas.Show;
 end;
 

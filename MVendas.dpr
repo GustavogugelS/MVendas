@@ -26,7 +26,8 @@ uses
   uDmNfe in 'uDmNfe.pas' {dmNfe: TDataModule},
   uFrmEnviarReceber in 'uFrmEnviarReceber.pas' {Form1},
   Loading in 'Classes\Loading.pas',
-  uFrmLeitorBarcode in 'uFrmLeitorBarcode.pas' {frmLeitorBarcode};
+  uFrmLeitorBarcode in 'uFrmLeitorBarcode.pas' {frmLeitorBarcode},
+  uVenda in 'Classes\uVenda.pas';
 
 {$R *.res}
 

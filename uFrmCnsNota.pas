@@ -39,6 +39,7 @@ type
     procedure pCarregarOpcoes;
     procedure pMsgCancelarNota;
     procedure pCarregarNotaImpressao;
+    procedure pAutorizarNota;
     procedure pAdicionarNotaLista(const nrDocumento, nrNota, status,
       sitNfce: Integer; const vlTotal: Currency; danfe, cliente: String);
   public
@@ -96,6 +97,7 @@ begin
 
   case index of
     1: dmNfe.ReimprimirNota;
+    {TODO: Autorizar nota feita}
     3: pMsgCancelarNota;
   end;
 end;
@@ -148,8 +150,13 @@ begin
       end;
     end;
   Except on E: Exception do
-    pLog('pAdicionarNotaLista', E.Message);
+    Log('pAdicionarNotaLista', E.Message);
   end;
+end;
+
+procedure TfrmCnsNota.pAutorizarNota;
+begin
+  dmNfe.EmitirNota;
 end;
 
 procedure TfrmCnsNota.pCarregarNota;
@@ -192,7 +199,7 @@ begin
       qryConsulta.Close;
     end;
   except on E: Exception do
-    pLog('pCarregarNota', E.Message);
+    Log('pCarregarNota', E.Message);
   end;
 end;
 

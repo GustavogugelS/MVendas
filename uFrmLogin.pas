@@ -53,7 +53,7 @@ type
   private
     { Private declarations }
     procedure pEsconderTab;
-    procedure pIniciarSistema;
+    procedure AbrirMenuPrincipal;
     procedure pSalvarConfig;
     procedure pCarregarConfig;
   public
@@ -80,7 +80,7 @@ end;
 
 procedure TfrmLogin.btnEntrarClick(Sender: TObject);
 begin
-  pIniciarSistema;
+  AbrirMenuPrincipal;
 end;
 
 procedure TfrmLogin.FormCreate(Sender: TObject);
@@ -93,7 +93,7 @@ begin
   dmPrincipal.ConfigurarPosPrinter;
 end;
 
-procedure TfrmLogin.pIniciarSistema;
+procedure TfrmLogin.AbrirMenuPrincipal;
 begin
   if not Assigned(FrmMenuPrincipal) then
     Application.CreateForm(TfrmMenuPrincipal, frmMenuPrincipal);

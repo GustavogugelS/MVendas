@@ -202,7 +202,6 @@ type
     procedure FormVirtualKeyboardHidden(Sender: TObject; KeyboardVisible: Boolean; const Bounds: TRect);
     procedure FormVirtualKeyboardShown(Sender: TObject; KeyboardVisible: Boolean; const Bounds: TRect);
     procedure btnLimpaCodigoClick(Sender: TObject);
-    procedure rectQtdClick(Sender: TObject);
     procedure imgListaClick(Sender: TObject);
     procedure lvItensItemClickEx(const Sender: TObject; ItemIndex: Integer;
       const LocalClickPos: TPointF; const ItemObject: TListItemDrawable);
@@ -239,15 +238,15 @@ type
     procedure layBtnGerencialClick(Sender: TObject);
     procedure layBtnSairClick(Sender: TObject);
     procedure imgBarCodeClick(Sender: TObject);
+    procedure rectQtdClick(Sender: TObject);
   private
-    procedure pPosicionarUltimoItemListView;
+    procedure PosicionarUltimoItemListView;
     procedure pAdicionarItemCupom(cdBarras: String);
     procedure pAdicionarItemLista(const sequencia: Integer; const Codigo, Barras, Nome: string; const vUnit, Total: Currency; const Qtd: Double);
     procedure pAtualizarTela;
     procedure pCarregarVendaAberta;
     function fCarregarItensVenda: Boolean;
     function fReceberValor(const tipo: tpFinalizadora; const valor: Currency): Boolean;
-    function fGravarPagBanco(const cdFinalizadora: Integer; const valor: Currency): Boolean;
     function ValidarDesc: Boolean;
 
     procedure SairVenda;
@@ -263,6 +262,7 @@ type
     procedure pMsgCancelarDesc;
     procedure pMsgSomenteAviso(titulo, texto: String);
     procedure AplicarQuantidade;
+    procedure AbrirLayQuantidade;
   public
     { Public declarations }
     function fTotaisCupom: boolean;
@@ -289,7 +289,7 @@ implementation
 
 uses
   uFrmLogin, uFrmEditor, uDmPrincipal, uFrmMensagem, uUtilitarios,
-  uConsultaBanco, uFormat, uFrmCnsProduto, uFrmCnsNota, uFrmCnsCliente, uDmNfe, uFrmMenuPrincipal, uFrmLeitorBarcode;
+  uConsultaBanco, uFormat, uFrmCnsProduto, uFrmCnsNota, uFrmCnsCliente, uDmNfe, uFrmMenuPrincipal, uFrmLeitorBarcode, Loading;
 
 {$R *.fmx}
 
@@ -439,44 +439,6 @@ begin
   end;
 end;
 
-function TfrmVendas.fGravarPagBanco(const cdFinalizadora: Integer;
-  const valor: Currency): Boolean;
-begin
-  try
-    with dmPrincipal do
-    begin
-      try
-        qryPagamento.Close;
-        qryPagamento.ParamByName('NR_DOCUMENTO').AsInteger := 0;
-        qryPagamento.Open;
-        qryPagamento.Append;
-
-        qryPagamento.FieldByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
-        qryPagamento.FieldByName('NR_SEQUENCIA').AsInteger := fAchaNrSequencia(rCupom.nrDocumento, 'PAGAMENTO');
-        qryPagamento.FieldByName('CAIXA').AsInteger := 1;
-        qryPagamento.FieldByName('DTH_EMISSAO').AsString := FormatDateTime('dd/mm/yyyy hh:mm:ss', now);
-        qryPagamento.FieldByName('VL_TOTAL').AsCurrency := valor;
-        qryPagamento.FieldByName('VL_TROCO').AsCurrency := rCupom.pagVlTroco;
-        qryPagamento.FieldByName('CANCELADO').AsInteger := 0;
-        qryPagamento.FieldByName('FINALIZADORA').AsInteger := cdFinalizadora;
-        qryPagamento.Post;
-
-        fGravarCaixaMov('V', cdFinalizadora, valor);
-
-        result := True;
-      finally
-        qryPagamento.Close;
-      end;
-    end;
-
-  except on E: Exception do
-    begin
-      result := False;
-      pLog('fGravarPagBanco', E.message);
-    end;
-  end;
-end;
-
 procedure TfrmVendas.FormCreate(Sender: TObject);
 begin
   TabControl.TabPosition := TTabPosition.None;
@@ -517,13 +479,13 @@ begin
     if valor >= rCupom.vlSubTotal then
     begin
       rCupom.pagVlTroco := valor - rCupom.vlSubTotal;
-      if fGravarPagBanco(1, valor) then
+      if dmPrincipal.GravarPagBanco(1, valor) then
         pFinalizarVenda;
       Exit;
     end
     else
     begin
-      fGravarPagBanco(1, valor);
+      dmPrincipal.GravarPagBanco(1, valor);
       rCupom.vlSubTotal := rCupom.vlSubTotal - valor;
       pAdicionarPagLista('SUBTOTAL', rCupom.vlSubTotal)
     end;
@@ -786,9 +748,9 @@ begin
       txt.Text := FormatCurr('R$ 0.00', Total);
       txt.TagString := txt.Text;
     end;
-    pPosicionarUltimoItemListView;
+    PosicionarUltimoItemListView;
   except on E: Exception do
-    pLog('pAdicionarItemLista', E.Message);
+    Log('pAdicionarItemLista', E.Message);
   end;
 end;
 
@@ -826,6 +788,7 @@ begin
   lblDesconto.Text := FormatCurr('R$ 0.00', rCupom.vlDesconto);
   lblSubtotal.Text := FormatCurr('R$ 0.00', rCupom.vlSubTotal);
   lblQtItens.Text := rCupom.qtItens.ToString;
+  lblQuantidade.Text := '1';
 end;
 
 procedure TfrmVendas.pCarregarVendaAberta;
@@ -892,6 +855,7 @@ end;
 
 procedure TfrmVendas.pFinalizarVenda;
 begin
+  TLoading.Show(Self, 'Emitindo');
   TThread.CreateAnonymousThread(procedure
   begin
     dmPrincipal.CalcularImposto;
@@ -900,6 +864,7 @@ begin
 
     TThread.Synchronize(nil, procedure
     begin
+      TLoading.Hide;
       pLimparDados;
     end);
   end).Start;
@@ -975,7 +940,7 @@ begin
   end);
 end;
 
-procedure TfrmVendas.pPosicionarUltimoItemListView;
+procedure TfrmVendas.PosicionarUltimoItemListView;
 var
   Tmp_top, scroll_total: Single;
 begin
@@ -1048,9 +1013,21 @@ end;
 
 procedure TfrmVendas.rectQtdClick(Sender: TObject);
 begin
+  AbrirLayQuantidade;
+end;
+
+procedure TfrmVendas.AbrirLayQuantidade;
+begin
+  if layQuantidade.Visible then
+  begin
+    layQuantidade.Visible := False;
+    Exit;
+  end;
+
   EdtQuantidade.Text := '0,000';
   Teclado(edtQuantidade);
   layQuantidade.Visible := True;
+  edtQuantidade.SetFocus;
 end;
 
 procedure TfrmVendas.RoundRect1Click(Sender: TObject);

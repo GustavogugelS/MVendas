@@ -60,8 +60,9 @@ begin
   if ItemObject is TListItemImage then {FAVORITO}
   begin
     try
-      favorito := 0;
-      if TListItemImage(lvConsulta.items[ItemIndex].Objects.FindDrawable('Image5')).TagString = '0' then
+
+      if TListItemImage(lvConsulta.items[ItemIndex].Objects.FindDrawable('Image5')).Bitmap =
+         imgDesmarcado.Bitmap then
       begin
         favorito := 1;
         TListItemImage(lvConsulta.items[ItemIndex].Objects.FindDrawable('Image5')).Bitmap
@@ -69,14 +70,16 @@ begin
       end
       else
       begin
+        favorito := 0;
         TListItemImage(lvConsulta.items[ItemIndex].Objects.FindDrawable('Image5')).Bitmap
           := imgDesmarcado.Bitmap;
       end;
 
-      dmPrincipal.fMarcarFavorito('produto', 'cd_barras', barras, favorito);
+      dmPrincipal.MarcarFavorito('produto', 'cd_barras', barras, favorito);
       Exit;
+
     except on E: Exception do
-      pLog('lvConsultaItemClickEx', E.Message);
+      Log('Erro na lvConsultaItemClickEx : ', E.Message);
     end;
   end;
 
@@ -155,7 +158,7 @@ begin
       end;
     end;
   Except on E: Exception do
-    pLog('pAdicionarProdutoLista', E.Message);
+    Log('pAdicionarProdutoLista', E.Message);
   end;
 end;
 
@@ -200,7 +203,7 @@ begin
       qryConsulta.Close;
     end;
   except on E: Exception do
-    pLog('pCarregarProduto', E.Message);
+    Log('pCarregarProduto', E.Message);
   end;
 end;
 

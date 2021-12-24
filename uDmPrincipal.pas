@@ -12,7 +12,7 @@ uses
   FireDAC.Stan.ExprFuncs, FireDAC.Comp.UI, uFrmVendas, UNFCeClass,
   MVCFramework.RESTClient, System.JSON, ACBrBase, ACBrDFeReport,
   ACBrDFeDANFeReport, ACBrNFeDANFEClass, ACBrNFeDANFeESCPOS, ACBrPosPrinter,
-  ACBrPosPrinterGEDI, System.Math;
+  ACBrPosPrinterGEDI, System.Math, uVenda;
 
 type
 
@@ -36,6 +36,7 @@ type
   private
     { Private declarations }
     fGEDIPrinter: TACBrPosPrinterGEDI;
+
   public
     { Public declarations }
     function fConectarBanco: Boolean;
@@ -45,16 +46,16 @@ type
     function fAchaNrSequencia(const nrDocumento: Integer; const tabela: String): Integer;
     function fAchaNrDocumento: Integer;
     function fBuscarProduto(const cdBarras: String): TProdutoCupom;
-    function DadosDaNota(const nrDocumento: Integer; var Nota: TNFCe): Boolean;
-    function fEmitirNota: Boolean;
+    function DadosDaNota(const nrDocumento: Integer; var Nota: TVenda): Boolean;
     function fCancelarNota(const nrDocumento: Integer): Boolean;
     function fDocumentoAberto: Integer;
     function fCalcularTotaisCupom: Boolean;
     function fControleCaixa(const tipo: Integer): Boolean;
-    function fGravarCaixaMov(const tipo: String; const cdFinalizadora: Integer; const valor: Currency): Boolean;
-    function fMarcarFavorito(tabela, where, chave: String; favorito: Integer): Boolean;
+    function GravarCaixaMov(const tipo: String; const cdFinalizadora: Integer; const valor: Currency): Boolean;
+    function MarcarFavorito(tabela, where, chave: String; favorito: Integer): Boolean;
     function GravarVendaBanco: Boolean;
     function GravarItemBanco: Boolean;
+    function GravarPagBanco(const cdFinalizadora: Integer; const valor: Currency): Boolean;
 
     procedure GravarConfiguracao(disp, ipServidor, portaServidor, Cnpj: String);
     procedure pDeletarVendaBanco;
@@ -160,7 +161,7 @@ begin
       qryNrNf.Open;
       result := qryNrNf.FieldByName('NR_NOTA').AsInteger;
     except on E: Exception do
-      pLog('Erro ao buscar numero de nota : ', E.Message);
+      Log('Erro ao buscar numero de nota : ', E.Message);
     end;
   finally
     qryNrNF.Free;
@@ -319,7 +320,7 @@ begin
   except on E: Exception do
     begin
       result := False;
-      pLog('fCancelarNota', E.Message);
+      Log('fCancelarNota', E.Message);
     end;
   end;
 end;
@@ -470,62 +471,13 @@ begin
     result := True;
   except on E: Exception do
     begin
-      pLog('fControleCaixa', E.Message);
+      Log('fControleCaixa', E.Message);
       result := False
     end;
   end;
 end;
 
-function TdmPrincipal.fEmitirNota: Boolean;
-var
-  Nota: TNFCe;
-//  FCli: MVCFramework.RESTClient.TRESTClient;
-//  FResp: MVCFramework.RESTClient.IRESTResponse;
-//  JsonObject: TJSONObject;
-begin
-//  FCli := MVCFramework.RESTClient.TRESTClient.create(configuracao.ipServidor,
-//          configuracao.portaServidor);
-//  FCli.ConnectionTimeOut(5000);
-  Nota := TNFCe.Create;
-
-  try
-    try
-      DadosDaNota(rCupom.nrDocumento, Nota);
-//      dmNfe.
-
-
-//      FResp := FCli.doPOST('/ServerApi/GeraNFCE/' + empresa.cnpj, [], Nota.AsJsonString);
-//      JsonObject := TJSONObject.ParseJSONValue(TEncoding.ASCII.GetBytes(FResp.BodyAsString), 0) as TJSONObject;
-//
-//      rCupom.autChaveDanfe := JsonObject.Values['chavedanfe'].Value;
-//      rCupom.autNrProtocolo := JsonObject.Values['protocolo'].Value;
-//      rCupom.autXmlVenda := JsonObject.Values['xml'].Value;
-//      rCupom.autSituacaoNfce := JsonObject.Values['situacaonfce'].Value;
-//      rCupom.autQrCode := JsonObject.Values['qrcode'].Value;
-//      rCupom.autNrLoteLote := JsonObject.Values['lote'].Value;
-//      rCupom.autRecibo := JsonObject.Values['recibo'].Value;
-//      rCupom.autHrprocessamento := JsonObject.Values['hr_autorizacao'].Value;
-//      rCupom.autDtProcessamento := JsonObject.Values['dt_autorizacao'].Value;
-//      rCupom.autNrDocumentoServidor := JsonObject.Values['NrDocumentoServidor'].Value;
-
-      AtualizarStatusNota;
-
-    except on E: Exception do
-      begin
-        pLog('fEmitirNota', E.Message);
-        AtualizarStatusNota(2);
-        result := False;
-      end;
-    end;
-
-  finally
-//    Nota.Free;
-//    JsonObject.Free;
-//    FCli.Free;
-  end;
-end;
-
-function TdmPrincipal.fGravarCaixaMov(const tipo: String;
+function TdmPrincipal.GravarCaixaMov(const tipo: String;
   const cdFinalizadora: Integer; const valor: Currency): Boolean;
 begin
   qryCaixaMov.Close;
@@ -541,10 +493,10 @@ begin
   qryCaixaMov.Post
 end;
 
-function TdmPrincipal.DadosDaNota(const nrDocumento: Integer; var Nota: TNFCe): Boolean;
+function TdmPrincipal.DadosDaNota(const nrDocumento: Integer; var Nota: TVenda): Boolean;
 var
-  NotaItens: TNFCeItem;
-  NotaPgto: TNFCePagto;
+  NotaItens: TItem;
+  NotaPgto: TPagamento;
 
   function fPreencheCabecalho: Boolean;
   begin
@@ -596,7 +548,7 @@ var
     qryNotaI.First;
     while not qryNotaI.Eof do
     begin
-      NotaItens := TNFCeItem.Create;
+      NotaItens := TItem.Create;
       NotaItens.nrDocumento := qryNotaI.FieldByName('NR_DOCUMENTO').AsInteger;
       NotaItens.nrSequencia := qryNotaI.FieldByName('NR_SEQUENCIA').AsInteger;
       NotaItens.cdProduto := qryNotaI.FieldByName('CD_BARRAS').AsString;
@@ -648,7 +600,7 @@ var
     qryPagamento.First;
     while not qryPagamento.Eof do
     begin
-      NotaPgto := TNFCePagto.Create;
+      NotaPgto := TPagamento.Create;
       NotaPgto.nrDocumento := qryPagamento.FieldByName('NR_DOCUMENTO').AsInteger;
       NotaPgto.nrSequencia := qryPagamento.FieldByName('NR_SEQUENCIA').AsInteger;
       NotaPgto.DtEmissao := qryPagamento.FieldByName('DTH_EMISSAO').AsString;
@@ -677,6 +629,44 @@ begin
   end;
 end;
 
+function TdmPrincipal.GravarPagBanco(const cdFinalizadora: Integer;
+  const valor: Currency): Boolean;
+begin
+  try
+    with dmPrincipal do
+    begin
+      try
+        qryPagamento.Close;
+        qryPagamento.ParamByName('NR_DOCUMENTO').AsInteger := 0;
+        qryPagamento.Open;
+        qryPagamento.Append;
+
+        qryPagamento.FieldByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
+        qryPagamento.FieldByName('NR_SEQUENCIA').AsInteger := fAchaNrSequencia(rCupom.nrDocumento, 'PAGAMENTO');
+        qryPagamento.FieldByName('CAIXA').AsInteger := 1;
+        qryPagamento.FieldByName('DTH_EMISSAO').AsString := FormatDateTime('dd/mm/yyyy hh:mm:ss', now);
+        qryPagamento.FieldByName('VL_TOTAL').AsCurrency := valor;
+        qryPagamento.FieldByName('VL_TROCO').AsCurrency := rCupom.pagVlTroco;
+        qryPagamento.FieldByName('CANCELADO').AsInteger := 0;
+        qryPagamento.FieldByName('FINALIZADORA').AsInteger := cdFinalizadora;
+        qryPagamento.Post;
+
+        GravarCaixaMov('V', cdFinalizadora, valor);
+
+        result := True;
+      finally
+        qryPagamento.Close;
+      end;
+    end;
+
+  except on E: Exception do
+    begin
+      result := False;
+      Log('Erro na GravarPagBanco : ', E.message);
+    end;
+  end;
+end;
+
 function TdmPrincipal.ReceberProduto: Boolean;
 begin
 
@@ -684,11 +674,11 @@ end;
 
 function TdmPrincipal.EnviarVenda: Boolean;
 var
-  venda: TNFCe;
+  venda: TVenda;
 begin
-  venda := TNFCe.Create;
+  venda := TVenda.Create;
   DadosDaNota(rCupom.nrDocumento, venda);
-  
+  {TODO: Terminar assim que o rafa passar o server}
 end;
 
 procedure TdmPrincipal.GravarConfiguracao(disp, ipServidor, portaServidor,
@@ -742,6 +732,7 @@ begin
       qryNotaI.Append;
 
       rProdutoCupom.nrSequencia := fAchaNrSequencia(rCupom.nrDocumento, 'NOTAI');
+      rProdutoCupom.qtd := IfThen(rProdutoCupom.qtd > 0, rProdutoCupom.qtd, 1);
 
       {Dados de produto}
       qryNotaI.FieldByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
@@ -772,7 +763,6 @@ begin
 
       {Atualiza Record}
       rProdutoCupom.vlTotal := qryNotaI.FieldByName('VL_TOTAL').AsCurrency;
-      rProdutoCupom.qtd := qryNotaI.FieldByName('QTD').AsFloat;
 
       qryNotaI.Post;
       result := True;
@@ -972,7 +962,7 @@ begin
       qryCalcImposto.Free;
     end;
   except on E: Exception do
-    pLog('pCalcImposto', e.Message);
+    Log('pCalcImposto', e.Message);
   end;
 end;
 
@@ -1102,7 +1092,7 @@ begin
   end;
 end;
 
-function TdmPrincipal.fMarcarFavorito(tabela, where, chave: String; favorito: Integer): Boolean;
+function TdmPrincipal.MarcarFavorito(tabela, where, chave: String; favorito: Integer): Boolean;
 var
   qryMarcarFav: TFDquery;
 begin
@@ -1122,7 +1112,7 @@ begin
       qryMarcarFav.Free;
     end;
   except on E: Exception do
-    pLog('fMarcarFavorito', E.Message);
+    Log('fMarcarFavorito', E.Message);
   end;
 end;
 
@@ -1189,7 +1179,7 @@ begin
     try
       qryGerencial.Open;
     except on E: Exception do
-      pLog('RelGerencial', 'Erro ao pegar as informações do banco : ' + E.Message);
+      Log('RelGerencial', 'Erro ao pegar as informações do banco : ' + E.Message);
     end;
 
     imprimir.ImprimirGerencial(qryGerencial);

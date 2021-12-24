@@ -91,7 +91,7 @@ begin
       txt.TagString := txt.Text;
     end;
   Except on E: Exception do
-    pLog('pAdicionarClienteLista', E.Message);
+    Log('pAdicionarClienteLista', E.Message);
   end;
 end;
 
@@ -128,7 +128,7 @@ begin
       qryConsulta.Close;
     end;
   except on E: Exception do
-    pLog('pCarregarCliente', E.Message);
+    Log('pCarregarCliente', E.Message);
   end;
 end;
 
