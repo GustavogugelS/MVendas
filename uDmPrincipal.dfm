@@ -11,7 +11,7 @@ object dmPrincipal: TdmPrincipal
       'DriverID=SQLite')
     LoginPrompt = False
     BeforeConnect = conexaoBeforeConnect
-    Left = 48
+    Left = 56
     Top = 24
   end
   object qryProduto: TFDQuery
@@ -95,40 +95,8 @@ object dmPrincipal: TdmPrincipal
       '    NOTAI'
       'WHERE'
       '    NR_DOCUMENTO = :NR_DOCUMENTO;')
-    Left = 48
-    Top = 168
-    ParamData = <
-      item
-        Name = 'NR_DOCUMENTO'
-        DataType = ftInteger
-        ParamType = ptInput
-        Value = Null
-      end>
-  end
-  object qryTotalCupom: TFDQuery
-    Connection = conexao
-    SQL.Strings = (
-      'SELECT'
-      '    COALESCE(COUNT(NR_SEQUENCIA), 0) AS QT_ITENS,'#9
-      
-        '    COALESCE(SUM(CASE WHEN COALESCE(NOTAI.CANCELADO, 0) = 0 THEN' +
-        ' ROUND(VL_DESCONTO + VL_DESCITEM, 2) ELSE 0 END), 0) AS TOTAL_DE' +
-        'SCONTO, '
-      
-        '    COALESCE(SUM(CASE WHEN COALESCE(NOTAI.CANCELADO, 0) = 0 THEN' +
-        ' ROUND(VL_DESCONTO, 2) ELSE 0 END), 0) AS DESCONTO_SUBTOTAL, '
-      
-        '    COALESCE(SUM(CASE WHEN COALESCE(NOTAI.CANCELADO, 0) = 0 THEN' +
-        ' ROUND(VL_TOTAL, 2) ELSE 0 END), 0) AS TOTAL, '
-      
-        '    COALESCE(SUM(CASE WHEN COALESCE(NOTAI.CANCELADO, 0) = 0 THEN' +
-        ' ROUND(VL_LIQUIDO, 2) ELSE 0 END), 0) AS LIQUIDO'
-      'FROM '
-      '    NOTAI'
-      'WHERE '
-      '    NR_DOCUMENTO = :NR_DOCUMENTO')
-    Left = 48
-    Top = 104
+    Left = 712
+    Top = 24
     ParamData = <
       item
         Name = 'NR_DOCUMENTO'
@@ -162,8 +130,8 @@ object dmPrincipal: TdmPrincipal
       end>
   end
   object FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink
-    Left = 48
-    Top = 400
+    Left = 56
+    Top = 96
   end
   object qryNotas: TFDQuery
     Connection = conexao
@@ -248,8 +216,8 @@ object dmPrincipal: TdmPrincipal
     ImprimeQRCodeLateral = True
     ImprimeEmUmaLinha = True
     PosPrinter = AcbrPosPrinter
-    Left = 792
-    Top = 32
+    Left = 816
+    Top = 320
   end
   object AcbrPosPrinter: TACBrPosPrinter
     ConfigBarras.MostrarCodigo = False
@@ -260,7 +228,7 @@ object dmPrincipal: TdmPrincipal
     ConfigQRCode.LarguraModulo = 4
     ConfigQRCode.ErrorLevel = 0
     LinhasEntreCupons = 0
-    Left = 792
-    Top = 96
+    Left = 816
+    Top = 384
   end
 end

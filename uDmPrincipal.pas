@@ -22,7 +22,6 @@ type
     qryNotaC: TFDQuery;
     qryNotaI: TFDQuery;
     qrySequencia: TFDQuery;
-    qryTotalCupom: TFDQuery;
     qryPagamento: TFDQuery;
     FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink;
     qryNotas: TFDQuery;
@@ -221,8 +220,32 @@ begin
 end;
 
 function TdmPrincipal.fCalcularTotaisCupom: Boolean;
+var
+  qryTotalCupom: TFDquery;
 begin
   try
+    qryTotalCupom := TFDquery.Create(nil);
+    qryTotalCupom.Connection := conexao;
+    qryTotalCupom.SQL.Add(
+      'SELECT ' +
+      '   COALESCE(COUNT(NR_SEQUENCIA), 0) AS QT_ITENS,	 ' +
+      '   COALESCE(SUM(CASE WHEN COALESCE(NOTAI.CANCELADO, 0) = 0  ' +
+      '		  THEN ROUND(VL_DESCONTO + VL_DESCITEM, 2)  ' +
+      '	  	ELSE 0 END), 0) AS TOTAL_DESCONTO,  ' +
+      '   COALESCE(SUM(CASE WHEN COALESCE(NOTAI.CANCELADO, 0) = 0  ' +
+      '		  THEN ROUND(VL_DESCONTO, 2)  ' +
+      '		  ELSE 0 END), 0) AS DESCONTO_SUBTOTAL,  ' +
+      '   COALESCE(SUM(CASE WHEN COALESCE(NOTAI.CANCELADO, 0) = 0  ' +
+      '	  	THEN ROUND(VL_TOTAL, 2)  ' +
+      '	  	ELSE 0 END), 0) AS TOTAL,  ' +
+      '   COALESCE(SUM(CASE WHEN COALESCE(NOTAI.CANCELADO, 0) = 0  ' +
+      '		  THEN ROUND(VL_LIQUIDO, 2)  ' +
+      '		  ELSE 0 END), 0) AS LIQUIDO ' +
+      'FROM  ' +
+      '    NOTAI ' +
+      'WHERE  ' +
+      '    NR_DOCUMENTO = :NR_DOCUMENTO ');
+
     result := False;
 
     {Carrega variaveis}
@@ -245,7 +268,7 @@ begin
 
     result := True;
   finally
-    qryTotalCupom.Close;
+    qryTotalCupom.Free;
     qryNotaC.Close;
   end;
 end;
