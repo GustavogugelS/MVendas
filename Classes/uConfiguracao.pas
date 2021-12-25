@@ -9,6 +9,7 @@ type
       FDispDescricao: String;
       FIdDispositivo: Integer;
       FIpServidor: String;
+      FUltimoUsuario: String;
       FPortaServidor: Integer;
       FSerie: Integer;
       FModelo: Integer;
@@ -16,8 +17,6 @@ type
       FCFOP: Integer;
       FCFOPST: Integer;
       FCaixaCodigo: Integer;
-      FCdUsuario: Integer;
-      FNomeUsuario: String;
       FIdCSC: Integer;
       FCSC: String;
       FUrlPFX: String;
@@ -31,14 +30,13 @@ type
       property DispDescricao: String read FDispDescricao write FDispDescricao;
       property CaixaCodigo: Integer read FCaixaCodigo write FCaixaCodigo;
       property Ipservidor: String read FIpServidor write FIpServidor;
+      property UltimoUsuario: String read FUltimoUsuario write FUltimoUsuario;
       property portaServidor: Integer read FPortaServidor write FPortaServidor;
       property Serie: Integer read FSerie write FSerie;
       property Modelo: Integer read FModelo write FModelo;
       property Homologacao: Integer read FHomologacao write FHomologacao;
       property CFOP: Integer read FCFOP write FCFOP;
       property CFOPST: Integer read FCFOPST write FCFOPST;
-      property CdUsuario: Integer read FCdUsuario write FCdUsuario;
-      property NomeUsuario: String read FNomeUsuario write FNomeUsuario;
       property IdCsc: Integer read FIdCSC write FIdCSC;
       property Csc: String read FCSC write FCSC;
       property UrlPFX: String read FUrlPFX write FUrlPFX;
@@ -47,7 +45,6 @@ type
       property Ambiente: Integer read FAmbiente write FAmbiente;
   end;
 
-type
   TConfiguracaoLocal = class
     private
       FId: Integer;
@@ -72,7 +69,6 @@ type
       property DtUltSinc: TDate read FDtUltSinc write FDtUltSinc;
   end;
 
-type
   TEmpresa = class
     private
       FAliqPis: Double;
@@ -115,7 +111,6 @@ type
       property Regime: Integer read FRegime write FRegime;
   end;
 
-type
   TCaixa = class
     private
       FId: Integer;
@@ -128,7 +123,35 @@ type
       property Data: String read FData write FData;
   end;
 
+  TUsuario = class
+    private
+      FId: Integer;
+      FSenha: String;
+      FLogin: String;
+      FNome: String;
+
+    public
+      property Id: Integer read FId write FId;
+      property Nome: String read FNome write FNome;
+      property Login: String read FLogin write FLogin;
+      property Senha: String read FSenha write FSenha;
+  end;
+
+  var
+    Empresa: TEmpresa;
+    Configuracao: TConfiguracao;
+    ConfigLocal: TConfiguracaoLocal;
+    Caixa: TCaixa;
+    Usuario: TUsuario;
+
 implementation
 
+Initialization
+
+  Empresa := TEmpresa.Create;
+  Configuracao := TConfiguracao.Create;
+  ConfigLocal := TConfiguracaoLocal.Create;
+  Caixa := TCaixa.Create;
+  Usuario := TUsuario.Create;
 
 end.

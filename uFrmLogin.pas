@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Objects,
   FMX.TabControl, FMX.Layouts, FMX.Controls.Presentation, FMX.StdCtrls, FMX.Edit,
-  System.Actions, FMX.ActnList, FMX.Android.Permissions;
+  System.Actions, FMX.ActnList, FMX.Android.Permissions, uConfiguracao;
 
 type
   TfrmLogin = class(TForm)
@@ -52,10 +52,13 @@ type
     procedure imgLoginClick(Sender: TObject);
   private
     { Private declarations }
-    procedure pEsconderTab;
+    procedure EsconderTab;
     procedure AbrirMenuPrincipal;
-    procedure pSalvarConfig;
-    procedure pCarregarConfig;
+    procedure SalvarConfigEdicao;
+    procedure CarregarConfigEdicao;
+    procedure CarregarUltimoLogin;
+
+    function FazerLogin: Boolean;
   public
     { Public declarations }
   end;
@@ -74,18 +77,20 @@ uses
 
 procedure TfrmLogin.btnConfirmarClick(Sender: TObject);
 begin
-  pSalvarConfig;
+  SalvarConfigEdicao;
   actTabLogin.ExecuteTarget(Sender);
 end;
 
 procedure TfrmLogin.btnEntrarClick(Sender: TObject);
 begin
-  AbrirMenuPrincipal;
+  if FazerLogin then
+    AbrirMenuPrincipal;
 end;
 
 procedure TfrmLogin.FormCreate(Sender: TObject);
 begin
-  pEsconderTab;
+  EsconderTab;
+  CarregarUltimoLogin;
 end;
 
 procedure TfrmLogin.imgLoginClick(Sender: TObject);
@@ -101,7 +106,7 @@ begin
   frmMenuPrincipal.Show;
 end;
 
-procedure TfrmLogin.pSalvarConfig;
+procedure TfrmLogin.SalvarConfigEdicao;
 begin
   if not edtDispositivo.Text.IsEmpty then
     if not edtIpServidor.Text.IsEmpty then
@@ -116,7 +121,20 @@ begin
         end;
 end;
 
-procedure TfrmLogin.pCarregarConfig;
+function TfrmLogin.FazerLogin: Boolean;
+begin
+  if not dmPrincipal.ValidarLogin(edtUsuario.Text, edtSenha.Text) then
+  begin
+    result := False;
+    ShowMessage('Usuario/Senha não conferem!');
+    Exit;
+  end;
+
+  dmPrincipal.ControlarCaixa(1);
+  result := True;
+end;
+
+procedure TfrmLogin.CarregarConfigEdicao;
 begin
   edtDispositivo.Text := configuracao.IdDispositivo.ToString;
   edtIpServidor.Text := configuracao.Ipservidor;
@@ -124,7 +142,12 @@ begin
   edtCNPJ.Text := empresa.Cnpj;
 end;
 
-procedure TfrmLogin.pEsconderTab;
+procedure TfrmLogin.CarregarUltimoLogin;
+begin
+  edtUsuario.Text := configuracao.UltimoUsuario;
+end;
+
+procedure TfrmLogin.EsconderTab;
 begin
   TabControl.TabPosition := TTabPosition.none;
 end;

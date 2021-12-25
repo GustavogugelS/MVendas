@@ -6,7 +6,8 @@ uses
   G700Interface,
   System.SysUtils,
   FireDAC.Comp.Client,
-  System.Classes;
+  System.Classes,
+  uConfiguracao;
 
   type
   TImpressao = class

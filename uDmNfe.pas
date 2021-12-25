@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Classes, ACBrBase, ACBrDFe, ACBrNFe, System.Zip,
   ACBrUtil, System.IoUtils, pcnConversao, blcksock,
   pcnConversaoNfe, ACBrDFeReport, ACBrDFeDANFeReport, ACBrNFeDANFEClass,
-  ACBrNFeDANFeESCPOS, StrUtils, uVenda;
+  ACBrNFeDANFeESCPOS, StrUtils, uVenda, uConfiguracao;
 
 type
   tpEvento = (EMISSAO, CANCELAMENTO);

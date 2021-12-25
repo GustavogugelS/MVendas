@@ -36,11 +36,14 @@ type
     { Private declarations }
     fGEDIPrinter: TACBrPosPrinterGEDI;
 
+    function ConectarBanco: Boolean;
+    function CarregarConfiguracao: Boolean;
+    function CarregarDadosEmpresa: Boolean;
+
+    procedure SalvarUltimoUsuario(user: String);
+
   public
     { Public declarations }
-    function fConectarBanco: Boolean;
-    function fCarregarConfiguracao: Boolean;
-    function fCarregarDadosEmpresa: Boolean;
     function fAchaNrNota: Integer;
     function fAchaNrSequencia(const nrDocumento: Integer; const tabela: String): Integer;
     function fAchaNrDocumento: Integer;
@@ -48,12 +51,13 @@ type
     function DadosDaNota(const nrDocumento: Integer; var Nota: TVenda): Boolean;
     function fDocumentoAberto: Integer;
     function fCalcularTotaisCupom: Boolean;
-    function fControleCaixa(const tipo: Integer): Boolean;
+    function ControlarCaixa(const tipo: Integer): Boolean;
     function GravarCaixaMov(const tipo: String; const cdFinalizadora: Integer; const valor: Currency): Boolean;
     function MarcarFavorito(tabela, where, chave: String; favorito: Integer): Boolean;
     function GravarVendaBanco: Boolean;
     function GravarItemBanco: Boolean;
     function GravarPagBanco(const cdFinalizadora: Integer; const valor: Currency): Boolean;
+    function ValidarLogin(user, senha: String): Boolean;
 
     procedure GravarConfiguracao(disp, ipServidor, portaServidor, Cnpj: String);
     procedure pDeletarVendaBanco;
@@ -77,10 +81,6 @@ type
 
 var
   dmPrincipal: TdmPrincipal;
-  configuracao: TConfiguracao;
-  configLocal: TConfiguracaoLocal;
-  empresa: TEmpresa;
-  caixa: TCaixa;
 
 implementation
 
@@ -95,7 +95,7 @@ uses
 
 procedure TdmPrincipal.conexaoBeforeConnect(Sender: TObject);
 begin
-  fConectarBanco;
+  ConectarBanco;
 end;
 
 procedure TdmPrincipal.ConfigurarPosPrinter;
@@ -117,12 +117,10 @@ end;
 procedure TdmPrincipal.DataModuleCreate(Sender: TObject);
 begin
   pCriarDir;
-  empresa := TEmpresa.Create;
-  configuracao := TConfiguracao.Create;
-  configLocal := TConfiguracaoLocal.Create;
-  caixa := TCaixa.Create;
-  fCarregarDadosEmpresa;
-  fCarregarConfiguracao;
+
+  CarregarDadosEmpresa;
+  CarregarConfiguracao;
+
   ConfigurarPosPrinter;
 end;
 
@@ -251,6 +249,7 @@ begin
     {Carrega variaveis}
     qryTotalCupom.ParamByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
     qryTotalCupom.Open;
+    
     rCupom.vlDesconto := qryTotalCupom.FieldByName('TOTAL_DESCONTO').AsCurrency;
     rCupom.vlDescontoSub:= qryTotalCupom.FieldByName('DESCONTO_SUBTOTAL').AsCurrency;
     rCupom.vlTotal := qryTotalCupom.FieldByName('TOTAL').AsCurrency + rCupom.vlDesconto;
@@ -261,6 +260,7 @@ begin
     qryNotaC.ParamByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
     qryNotaC.Open;
     qryNotaC.Edit;
+    
     qryNotaC.FieldByName('VL_TOTAL').AsCurrency := rCupom.vlSubTotal;
     qryNotaC.FieldByName('VL_DESCONTO').AsCurrency := rCupom.vlDesconto;
     qryNotaC.FieldByName('QT_ITENS').AsInteger := rCupom.qtItens;
@@ -273,7 +273,7 @@ begin
   end;
 end;
 
-function TdmPrincipal.fCarregarConfiguracao: Boolean;
+function TdmPrincipal.CarregarConfiguracao: Boolean;
 var
   qryConfiguracao: TFDquery;
 begin
@@ -288,14 +288,13 @@ begin
     configuracao.DispDescricao := qryConfiguracao.FieldByName('DISP_DESCRICAO').AsString;
     configuracao.IpServidor := qryConfiguracao.FieldByName('IP_SERVIDOR').AsString;
     configuracao.PortaServidor := qryConfiguracao.FieldByName('PORTA_SERVIDOR').AsInteger;
+    configuracao.UltimoUsuario := qryConfiguracao.FieldByName('ULTIMO_USUARIO').AsString;
     configuracao.CaixaCodigo := qryConfiguracao.FieldByName('CAIXA_CODIGO').AsInteger;
     configuracao.Serie := qryConfiguracao.FieldByName('SERIE').AsInteger;
     configuracao.Modelo := qryConfiguracao.FieldByName('MODELO').AsInteger;
     configuracao.Homologacao := qryConfiguracao.FieldByName('HOMOLOGACAO').AsInteger;
     configuracao.CFOP := qryConfiguracao.FieldByName('CFOP').AsInteger;
     configuracao.CFOPST := qryConfiguracao.FieldByName('CFOP_ST').AsInteger;
-    configuracao.CdUsuario := qryConfiguracao.FieldByName('CD_USUARIO').AsInteger;
-    configuracao.NomeUsuario := qryConfiguracao.FieldByName('NOME_USUARIO').AsString;
     configuracao.IdCsc := qryConfiguracao.FieldByName('ID_CSC').AsInteger;
     configuracao.Csc := qryConfiguracao.FieldByName('CSC').AsString;
     configuracao.UrlPFX := qryConfiguracao.FieldByName('URL_PFX').AsString;
@@ -314,12 +313,9 @@ begin
   finally
     qryConfiguracao.Free;
   end;
-
-  {Caixa}
-  fControleCaixa(1);
 end;
 
-function TdmPrincipal.fCarregarDadosEmpresa: Boolean;
+function TdmPrincipal.CarregarDadosEmpresa: Boolean;
 var
   qryEmpresa: TFDquery;
 begin
@@ -351,7 +347,7 @@ begin
   end;
 end;
 
-function TdmPrincipal.fConectarBanco: Boolean;
+function TdmPrincipal.ConectarBanco: Boolean;
 begin
   with conexao do
   begin
@@ -384,7 +380,7 @@ begin
   end;
 end;
 
-function TdmPrincipal.fControleCaixa(const tipo: Integer): Boolean;
+function TdmPrincipal.ControlarCaixa(const tipo: Integer): Boolean;
 begin
   try
     case tipo of
@@ -398,7 +394,7 @@ begin
         if qryCaixa.IsEmpty then
         begin
           qryCaixa.Append;
-          qryCaixa.FieldByName('CD_USUARIO').AsInteger := configuracao.CdUsuario;
+          qryCaixa.FieldByName('CD_USUARIO').AsInteger := Usuario.Id;
           qryCaixa.FieldByName('DATA').AsString := FormatDateTime('dd/mm/yyyy', now);
           qryCaixa.FieldByName('FECHADO').AsInteger := 0;
           qryCaixa.Post;
@@ -1120,7 +1116,7 @@ begin
     '    CAIXA.CD_USUARIO = :CD_USUARIO ' +
     'GROUP BY CAIXA_MOVIMENTO.FINALIZADORA ');
 
-  qryGerencial.ParamByName('CD_USUARIO').AsInteger := configuracao.CdUsuario;
+  qryGerencial.ParamByName('CD_USUARIO').AsInteger := Usuario.Id;
 
   try
 
@@ -1135,6 +1131,62 @@ begin
     qryGerencial.Free;
   end;
 
+end;
+
+procedure TdmPrincipal.SalvarUltimoUsuario(user: String);
+var
+  qryUltimoUsuario: TFDquery;
+begin
+  qryUltimoUsuario := TFDquery.Create(nil);
+  qryUltimoUsuario.SQL.Add('UPDATE CONFIGURACAO SET ULTIMO_USUARIO = :ULTIMO_USUARIO');
+  qryUltimoUsuario.ParamByName('ULTIMO_USUARIO').AsString := user;
+
+  try
+    qryUltimoUsuario.ExecSQL;
+  finally
+    qryUltimoUsuario.Free;
+  end;
+end;
+
+function TdmPrincipal.ValidarLogin(user, senha: String): Boolean;
+var
+  qryLogin: TFDquery;
+begin
+  qryLogin := TFDquery.Create(nil);
+  qryLogin.Connection := conexao;
+
+  qryLogin.SQL.Add(
+    'SELECT ' +
+    '    * ' +
+    'FROM ' +
+    '    USUARIO ' +
+    'WHERE ' +
+    '    LOGIN = :LOGIN');
+
+  qryLogin.ParamByName('USUARIO').AsString := usuario;
+
+  try
+    qryLogin.Open;
+  except on E: Exception do
+    Log('Erro ao validarLogin : ', E.Message);
+  end;
+
+  try
+    result := qryLogin.FieldByName('SENHA').AsString = senha;
+
+    if result then
+    begin
+      Usuario.Id := qryLogin.FieldByName('ID').AsInteger;
+      Usuario.Nome := qryLogin.FieldByName('NOME').AsString;
+      Usuario.Login := qryLogin.FieldByName('LOGIN').AsString;
+      Usuario.Senha := qryLogin.FieldByName('SENHA').AsString;
+
+      SalvarUltimoUsuario
+    end;
+
+  finally
+    qryLogin.Free;
+  end;
 end;
 
 function TdmPrincipal.fDocumentoAberto: Integer;
