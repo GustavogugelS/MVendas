@@ -312,6 +312,11 @@
             <FormType>fmx</FormType>
         </DCCReference>
         <DCCReference Include="Classes\uVenda.pas"/>
+        <DCCReference Include="uDmSincronismo.pas">
+            <Form>dmSincronismo</Form>
+            <FormType>dfm</FormType>
+            <DesignClass>TDataModule</DesignClass>
+        </DCCReference>
         <JavaReference Include="Jar\gertec_classes_g700.jar">
             <Disabled/>
         </JavaReference>

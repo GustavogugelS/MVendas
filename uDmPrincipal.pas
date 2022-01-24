@@ -72,11 +72,6 @@ type
     procedure ConfigurarPosPrinter;
     procedure RelGerencial;
 
-    {Funções de dincronismo}
-    function EnviarVenda: Boolean;
-    function ReceberProduto: Boolean;
-//    function ReceberCliente: Boolean;
-//    function ReceberUsuario: Boolean;
   end;
 
 var
@@ -609,20 +604,6 @@ begin
       Log('Erro na GravarPagBanco : ', E.message);
     end;
   end;
-end;
-
-function TdmPrincipal.ReceberProduto: Boolean;
-begin
-
-end;
-
-function TdmPrincipal.EnviarVenda: Boolean;
-var
-  venda: TVenda;
-begin
-  venda := TVenda.Create;
-  DadosDaNota(rCupom.nrDocumento, venda);
-  {TODO: Terminar assim que o rafa passar o server}
 end;
 
 procedure TdmPrincipal.GravarConfiguracao(disp, ipServidor, portaServidor,

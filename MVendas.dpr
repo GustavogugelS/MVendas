@@ -26,7 +26,8 @@ uses
   uFrmEnviarReceber in 'uFrmEnviarReceber.pas' {Form1},
   Loading in 'Classes\Loading.pas',
   uFrmLeitorBarcode in 'uFrmLeitorBarcode.pas' {frmLeitorBarcode},
-  uVenda in 'Classes\uVenda.pas';
+  uVenda in 'Classes\uVenda.pas',
+  uDmSincronismo in 'uDmSincronismo.pas' {dmSincronismo: TDataModule};
 
 {$R *.res}
 
@@ -34,5 +35,6 @@ begin
   Application.Initialize;
   Application.CreateForm(TdmPrincipal, dmPrincipal);
   Application.CreateForm(TfrmInicial, frmInicial);
+  Application.CreateForm(TdmSincronismo, dmSincronismo);
   Application.Run;
 end.
