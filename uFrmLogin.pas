@@ -69,7 +69,7 @@ var
 implementation
 
 uses
-  uFrmMenuPrincipal, uDmPrincipal;
+  uFrmMenuPrincipal, uDmPrincipal, uUtilitarios;
 
 {$R *.fmx}
 
@@ -113,7 +113,7 @@ begin
       if not edtCNPJ.Text.IsEmpty then
         if not edtPortaServidor.Text.IsEmpty then
         begin
-          dmPrincipal.GravarConfiguracao(
+          dmPrincipal.GravarConfigu(
             edtDispositivo.Text,
             edtIpServidor.Text,
             edtPortaServidor.Text,

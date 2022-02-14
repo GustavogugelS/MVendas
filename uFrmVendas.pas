@@ -198,6 +198,7 @@ type
     Label23: TLabel;
     ShadowEffect4: TShadowEffect;
     edtQuantidade: TEdit;
+    stlMVendas: TStyleBook;
     procedure FormCreate(Sender: TObject);
     procedure FormVirtualKeyboardHidden(Sender: TObject; KeyboardVisible: Boolean; const Bounds: TRect);
     procedure FormVirtualKeyboardShown(Sender: TObject; KeyboardVisible: Boolean; const Bounds: TRect);

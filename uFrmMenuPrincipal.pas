@@ -46,7 +46,7 @@ var
 implementation
 
 uses
-  uFrmVendas, uDmNfe, Loading, uFrmLogin;
+  uFrmVendas, uDmNfe, Loading, uFrmLogin, uDmSincronismo;
 
 {$R *.fmx}
 
@@ -61,22 +61,23 @@ end;
 
 procedure TfrmMenuPrincipal.IniciarSincronismo;
 begin
-  Tloading.Show(Self, 'Aguarde');
-  TThread.CreateAnonymousThread(procedure
-  begin
-    sleep(10000);
-    //TODO: Chamar Sincronismo
-    
-    TThread.Synchronize(nil, procedure
-    begin
-    
-      TLoading.Hide;
-      ShowMessage('Sincronismo concluído');
-      
-    end);
-      
-  end).Start;
-  
+//  Tloading.Show(Self, 'Aguarde');
+//  TThread.CreateAnonymousThread(procedure
+//  begin
+//    sleep(10000);
+//    //TODO: Chamar Sincronismo
+//
+//    TThread.Synchronize(nil, procedure
+//    begin
+//
+//      TLoading.Hide;
+//      ShowMessage('Sincronismo concluído');
+//
+//    end);
+//
+//  end).Start;
+
+  dmSincronismo.ReceberDados(frmMenuPrincipal);
 end;
 
 procedure TfrmMenuPrincipal.Layout3Click(Sender: TObject);
@@ -92,7 +93,8 @@ end;
 
 procedure TfrmMenuPrincipal.Layout5Click(Sender: TObject);
 begin
-  IniciarSincronismo;
+  dmSincronismo.Imei := '869129022553165';
+  dmSincronismo.ReceberDados(frmMenuPrincipal);
 end;
 
 procedure TfrmMenuPrincipal.pAbrirPDV;

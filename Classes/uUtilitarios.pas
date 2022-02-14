@@ -1,9 +1,10 @@
 unit uUtilitarios;
 
 interface
+
   uses
     FMX.ListView, FMX.ListView.Appearances, FMX.ListView.Types, System.SysUtils,
-    FMX.VirtualKeyboard, FMX.Platform, FMX.Edit;
+    FMX.VirtualKeyboard, FMX.Platform, FMX.Edit, FMX.Platform.Android;
 
   type
     TUtilitarios = class
@@ -21,9 +22,23 @@ interface
     procedure pAddLista(lista: TListView; texto: String; indice: Integer = 0);
     procedure Teclado(edt: TEdit);
 
+    function CapTurarImei: String;
+
 implementation
 
+uses
+  System.Permissions, Androidapi.Helpers, Androidapi.JNI.Telephony,
+  Androidapi.JNI.OS;
+
 { TUtilitarios }
+
+function CapturarImei: String;
+var
+  tm: JTelephonyManager;
+begin
+  tm := TJTelephonyManager.Create;
+  result := JStringToString(tm.getImei);
+end;
 
 procedure Teclado(edt: TEdit);
 var

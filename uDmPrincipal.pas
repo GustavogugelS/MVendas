@@ -58,8 +58,13 @@ type
     function GravarItemBanco: Boolean;
     function GravarPagBanco(const cdFinalizadora: Integer; const valor: Currency): Boolean;
     function ValidarLogin(user, senha: String): Boolean;
+    function VerificarTemConfiguracao: Boolean;
 
-    procedure GravarConfiguracao(disp, ipServidor, portaServidor, Cnpj: String);
+    function GravarEmpresa(dados: TFDMemTable): Boolean;
+    function GravarCliente(dados: TFDMemTable): Boolean;
+    function GravarProduto(dados: TFDMemTable): Boolean;
+
+    procedure GravarConfigu(disp, ipServidor, portaServidor, Cnpj: String);
     procedure pDeletarVendaBanco;
     procedure pDeletarItemBanco(const sequencia: Integer);
     procedure pDeletarPagBanco;
@@ -71,6 +76,7 @@ type
     procedure pCarregarDadosCliente;
     procedure ConfigurarPosPrinter;
     procedure RelGerencial;
+    procedure GravarIMEI;
 
   end;
 
@@ -432,6 +438,51 @@ begin
   qryCaixaMov.Post
 end;
 
+function TdmPrincipal.GravarCliente(dados: TFDMemTable): Boolean;
+var
+  qryCliente: TFDquery;
+begin
+  qryCliente := TFDquery.Create(nil);
+  qryCliente.Connection := conexao;
+
+  qryCliente.Sql.Add(
+    ' INSERT INTO CLIENTE (ATIVO, CPF, NOME, ID ) ' +
+    '   VALUES (:ATIVO, :CPF, :NOME, :ID )');
+
+  qryCliente.Params.ArraySize := dados.RecordCount;
+  while not dados.Eof do
+  begin
+    qryCliente.Params[0].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('RTI_CODIGO').AsInteger;
+    qryCliente.Params[1].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('EST_CODIGOIBGE').AsInteger;
+    qryCliente.Params[2].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('PES_TELEFONE1').AsString;
+    qryCliente.Params[3].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('PES_RGINSCEST').AsString;
+
+    qryCliente.Next;
+  end;
+
+  try
+
+    try
+      qryCliente.Execute(dados.RecordCount);
+    except on E: Exception  do
+      begin
+        result := False;
+        Log('GravarCliente', 'Erro ao gravar cliente : ' + e.Message);
+      end;
+    end;
+
+    result := True;
+
+  finally
+    qryCliente.Free;
+  end;
+
+end;
+
 function TdmPrincipal.DadosDaNota(const nrDocumento: Integer; var Nota: TVenda): Boolean;
 var
   NotaItens: TItem;
@@ -606,7 +657,54 @@ begin
   end;
 end;
 
-procedure TdmPrincipal.GravarConfiguracao(disp, ipServidor, portaServidor,
+function TdmPrincipal.GravarProduto(dados: TFDMemTable): Boolean;
+var
+  qryProduto: TFDquery;
+begin
+  qryProduto := TFDquery.Create(nil);
+  qryProduto.Connection := conexao;
+
+  qryProduto.Sql.Add(
+    ' INSERT INTO PRODUTO (PC_REDUCAO, GTIN, PESO_LIQUIDO, ATIVO, FAVORITO, NATUREZA_RECEITA, ' +
+    '   CST_PISCOFINS, CEST, NCM, ALIQ, CST_ICMS, UN, PRECO, DESCRICAO, CD_BARRAS, CD_PRODUTO) ' +
+    ' VALUES (:PC_REDUCAO, :GTIN, :PESO_LIQUIDO, :ATIVO, :FAVORITO, :NATUREZA_RECEITA, ' +
+    '   :CST_PISCOFINS, :CEST, :NCM, :ALIQ, :CST_ICMS, :UN, :PRECO, :DESCRICAO, :CD_BARRAS, :CD_PRODUTO)');
+
+  qryProduto.Params.ArraySize := dados.RecordCount;
+  while not dados.Eof do
+  begin
+    qryProduto.Params[0].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('RTI_CODIGO').AsInteger;
+    qryProduto.Params[1].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('EST_CODIGOIBGE').AsInteger;
+    qryProduto.Params[2].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('PES_TELEFONE1').AsString;
+    qryProduto.Params[3].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('PES_RGINSCEST').AsString;
+
+    qryProduto.Next;
+  end;
+
+  try
+
+    try
+      qryProduto.Execute(dados.RecordCount);
+    except on E: Exception  do
+      begin
+        result := False;
+        Log('GravarCliente', 'Erro ao gravar cliente : ' + e.Message);
+      end;
+    end;
+
+    result := True;
+
+  finally
+    qryProduto.Free;
+  end;
+
+end;
+
+procedure TdmPrincipal.GravarConfigu(disp, ipServidor, portaServidor,
   Cnpj: String);
 var
   qryConfiguracao: TFDquery;
@@ -643,6 +741,105 @@ begin
     qryEmpresa.ExecSQL;
   finally
     qryEmpresa.Free;
+  end;
+end;
+
+function TdmPrincipal.GravarEmpresa(dados: TFDMemTable): Boolean;
+var
+  qryEmpresa: TFDquery;
+begin
+  qryEmpresa := TFDquery.Create(nil);
+  qryEmpresa.Connection := conexao;
+
+  qryEmpresa.Sql.Add(
+    'INSERT OR REPLACE INTO EMPRESA ' +
+    ' (REGIME, UF_CODIGO, TELEFONE, IE, COFINSALIQUOTA, PISALIQUOTA, CEP, NUMERO, COMPLEMENTO, RUA, ' +
+    ' BAIRRO, IBGECODIGO, CIDADE, UF, CNPJ, FANTASIA, RAZAOSOCIAL, ID ) ' +
+    'VALUES (:REGIME, :UF_CODIGO, :TELEFONE, :IE, :COFINSALIQUOTA, :PISALIQUOTA, :CEP, :NUMERO, ' +
+    '	:COMPLEMENTO, :RUA, :BAIRRO, :IBGECODIGO, :CIDADE, :UF, :CNPJ, :FANTASIA, :RAZAOSOCIAL, :ID )');
+
+  qryEmpresa.Params.ArraySize := dados.RecordCount;
+  while not dados.Eof do
+  begin
+    qryEmpresa.Params[0].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('rtiCodigo').AsInteger;
+    qryEmpresa.Params[1].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('estCodigoibge').AsInteger;
+    qryEmpresa.Params[2].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('pesTelefon1').AsString;
+    qryEmpresa.Params[3].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('pesRginscest').AsString;
+    qryEmpresa.Params[4].AsCurrencys[dados.IndexFieldCount] :=
+      dados.FieldByName('pesAliquotacofins').AsCurrency;
+    qryEmpresa.Params[5].AsCurrencys[dados.IndexFieldCount] :=
+      dados.FieldByName('pesAliquotapis').AsCurrency;
+    qryEmpresa.Params[6].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('pesCep').AsInteger;
+    qryEmpresa.Params[7].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('pesNumero').AsInteger;
+    qryEmpresa.Params[8].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('estCodigoibge').AsString;
+    qryEmpresa.Params[9].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('pesRua').AsString;
+    qryEmpresa.Params[10].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('pesBairro').AsString;
+    qryEmpresa.Params[11].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('cidCodigoibge').AsString;
+    qryEmpresa.Params[12].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('cidNome').AsString;
+    qryEmpresa.Params[13].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('estSigla').AsString;
+    qryEmpresa.Params[14].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('pesCpfcnpj').AsString;
+    qryEmpresa.Params[15].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('pesNome').AsString;
+    qryEmpresa.Params[16].AsStrings[dados.IndexFieldCount] :=
+      dados.FieldByName('pesNome').AsString;
+    qryEmpresa.Params[15].AsIntegers[dados.IndexFieldCount] :=
+      dados.FieldByName('pesCodigo').AsInteger;
+
+    qryEmpresa.Next;
+  end;
+
+  try
+
+    try
+      qryEmpresa.Execute(dados.RecordCount);
+    except on E: Exception  do
+      begin
+        result := False;
+        Log('GravarEmpresa', 'Erro ao gravar empresa : ' + e.Message);
+      end;
+    end;
+
+    result := True;
+
+  finally
+    qryEmpresa.Free;
+  end;
+
+end;
+
+procedure TdmPrincipal.GravarIMEI;
+var
+  qryImei: TFDquery;
+begin
+  qryImei := TFDquery.Create(nil);
+  qryImei.Connection := conexao;
+
+  qryImei.SQL.Add('UPDATE CONFIGURACAO_LOCAL SET IMEI = :IMEI');
+  qryImei.ParamByName('IMEI').AsString := CapTurarImei;
+
+  try
+
+    try
+      qryImei.ExecSQL;
+    except on E: Exception do
+      Log('GravarIMEI', 'Erro ao gravar IMEI : ' + E.Message);
+    end;
+
+  finally
+    qryImei.Free;
   end;
 end;
 
@@ -1078,7 +1275,7 @@ var
   qryGerencial: TFDquery;
 begin
   qryGerencial := TFDquery.Create(nil);
-  qryGerencial.Connection := dmPrincipal.conexao;
+  qryGerencial.Connection := conexao;
   qryGerencial.SQL.Add(
     'SELECT ' +
     '    CAIXA_MOVIMENTO.TIPO, ' +
@@ -1119,8 +1316,9 @@ var
   qryUltimoUsuario: TFDquery;
 begin
   qryUltimoUsuario := TFDquery.Create(nil);
-  qryUltimoUsuario.SQL.Add('UPDATE CONFIGURACAO SET ULTIMO_USUARIO = :ULTIMO_USUARIO');
-  qryUltimoUsuario.ParamByName('ULTIMO_USUARIO').AsString := user;
+  qryUltimoUsuario.Connection := conexao;
+  qryUltimoUsuario.SQL.Add('UPDATE CONFIGURACAO_LOCAL SET ULT_LOGIN = :ULT_LOGIN');
+  qryUltimoUsuario.ParamByName('ULT_LOGIN').AsString := user;
 
   try
     qryUltimoUsuario.ExecSQL;
@@ -1144,7 +1342,7 @@ begin
     'WHERE ' +
     '    LOGIN = :LOGIN');
 
-  qryLogin.ParamByName('USUARIO').AsString := usuario;
+  qryLogin.ParamByName('LOGIN').AsString := user;
 
   try
     qryLogin.Open;
@@ -1162,12 +1360,33 @@ begin
       Usuario.Login := qryLogin.FieldByName('LOGIN').AsString;
       Usuario.Senha := qryLogin.FieldByName('SENHA').AsString;
 
-      SalvarUltimoUsuario
+      SalvarUltimoUsuario(Usuario.Nome);
     end;
 
   finally
     qryLogin.Free;
   end;
+end;
+
+function TdmPrincipal.VerificarTemConfiguracao: Boolean;
+var
+  qryConfig: TFDQuery;
+begin
+  qryConfig := TFDQuery.Create(nil);
+  qryConfig.Connection := conexao;
+
+  try
+    qryConfig.Open('SELECT DISP_ID FROM CONFIGURACAO WHERE DISP_ID > 0');
+
+    result := not qryConfig.IsEmpty;
+
+    if not result then
+      dmPrincipal.GravarIMEI;
+
+  finally
+    qryConfig.Free;
+  end;
+
 end;
 
 function TdmPrincipal.fDocumentoAberto: Integer;

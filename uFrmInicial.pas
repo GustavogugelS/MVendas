@@ -42,7 +42,7 @@ type
     { Private declarations }
     procedure pTratarSlide(const slide: Integer);
     procedure pAbrirLogin(const temConfig: Boolean = True);
-    function fTemConfiguracao: Boolean;
+
     { Public declarations }
   end;
 
@@ -59,24 +59,8 @@ uses
 
 procedure TfrmInicial.FormCreate(Sender: TObject);
 begin
-  if fTemConfiguracao then
+  if dmPrincipal.VerificarTemConfiguracao then
     pAbrirLogin;
-
-
-end;
-
-function TfrmInicial.fTemConfiguracao: Boolean;
-var
-  qryConfig: TFDQuery;
-begin
-  qryConfig := TFDQuery.Create(nil);
-  try
-    qryConfig.Connection := dmPrincipal.conexao;
-    qryConfig.Open('SELECT DISP_ID FROM CONFIGURACAO WHERE DISP_ID > 0');
-    result := not qryConfig.IsEmpty;
-  finally
-    qryConfig.Free;
-  end;
 end;
 
 procedure TfrmInicial.lblProximoClick(Sender: TObject);
