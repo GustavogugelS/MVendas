@@ -12,7 +12,7 @@ uses
   FireDAC.Stan.ExprFuncs, FireDAC.Comp.UI, uFrmVendas,
   MVCFramework.RESTClient, System.JSON, ACBrBase, ACBrDFeReport,
   ACBrDFeDANFeReport, ACBrNFeDANFEClass, ACBrNFeDANFeESCPOS, ACBrPosPrinter,
-  ACBrPosPrinterGEDI, System.Math, uVenda;
+  ACBrPosPrinterGEDI, System.Math, uVenda, System.Variants;
 
 type
 
@@ -41,6 +41,7 @@ type
     function CarregarDadosEmpresa: Boolean;
 
     procedure SalvarUltimoUsuario(user: String);
+    function VerificarNull(valor: Variant): Variant;
 
   public
     { Public declarations }
@@ -50,7 +51,8 @@ type
     function fBuscarProduto(const cdBarras: String): TProdutoCupom;
     function DadosDaNota(const nrDocumento: Integer; var Nota: TVenda): Boolean;
     function fDocumentoAberto: Integer;
-    function fCalcularTotaisCupom: Boolean;
+    function CalcularTotaisCupom: Boolean;
+    function CalcularTotalItem(nrSequencia: Integer): Boolean;
     function ControlarCaixa(const tipo: Integer): Boolean;
     function GravarCaixaMov(const tipo: String; const cdFinalizadora: Integer; const valor: Currency): Boolean;
     function MarcarFavorito(tabela, where, chave: String; favorito: Integer): Boolean;
@@ -64,6 +66,7 @@ type
     function GravarCliente(dados: TFDMemTable): Boolean;
     function GravarProduto(dados: TFDMemTable): Boolean;
 
+    procedure ModificarQuantidade(operacao: opQuantidade; index: integer; qtd: String = '1');
     procedure GravarConfigu(disp, ipServidor, portaServidor, Cnpj: String);
     procedure pDeletarVendaBanco;
     procedure pDeletarItemBanco(const sequencia: Integer);
@@ -206,6 +209,7 @@ begin
     result.gtin := qryProduto.FieldByName('GTIN').AsString;
     result.AliqIcms := qryProduto.FieldByName('ALIQ').AsFloat;
     result.pcReducao := qryProduto.FieldByName('PC_REDUCAO').AsCurrency;
+    result.qtd := 1;
 
     if result.cst = '000' then
       result.cfop := configuracao.CFOP
@@ -218,7 +222,7 @@ begin
   end;
 end;
 
-function TdmPrincipal.fCalcularTotaisCupom: Boolean;
+function TdmPrincipal.CalcularTotaisCupom: Boolean;
 var
   qryTotalCupom: TFDquery;
 begin
@@ -274,6 +278,26 @@ begin
   end;
 end;
 
+function TdmPrincipal.CalcularTotalItem(nrSequencia: Integer): Boolean;
+var
+  qryItem: TFDquery;
+begin
+  qryItem := TFDquery.Create(nil);
+  qryItem.Connection := conexao;
+  qryItem.SQL.Add('UPDATE NOTAI ' +
+                  'SET VL_TOTAL = ROUND(VL_BRUTO * QTD, 2) ' +
+                  'WHERE NR_SEQUENCIA = :NR_SEQUENCIA ');
+
+  qryItem.ParamByName('NR_SEQUENCIA').AsInteger := nrSequencia;
+
+  try
+    qryItem.ExecSQL;
+  finally
+    qryItem.Free;
+  end;
+
+end;
+
 function TdmPrincipal.CarregarConfiguracao: Boolean;
 var
   qryConfiguracao: TFDquery;
@@ -293,7 +317,6 @@ begin
     configuracao.CaixaCodigo := qryConfiguracao.FieldByName('CAIXA_CODIGO').AsInteger;
     configuracao.Serie := qryConfiguracao.FieldByName('SERIE').AsInteger;
     configuracao.Modelo := qryConfiguracao.FieldByName('MODELO').AsInteger;
-    configuracao.Homologacao := qryConfiguracao.FieldByName('HOMOLOGACAO').AsInteger;
     configuracao.CFOP := qryConfiguracao.FieldByName('CFOP').AsInteger;
     configuracao.CFOPST := qryConfiguracao.FieldByName('CFOP_ST').AsInteger;
     configuracao.IdCsc := qryConfiguracao.FieldByName('ID_CSC').AsInteger;
@@ -450,6 +473,7 @@ begin
     '   VALUES (:ATIVO, :CPF, :NOME, :ID )');
 
   qryCliente.Params.ArraySize := dados.RecordCount;
+  dados.First;
   while not dados.Eof do
   begin
     qryCliente.Params[0].AsIntegers[dados.IndexFieldCount] :=
@@ -461,7 +485,7 @@ begin
     qryCliente.Params[3].AsStrings[dados.IndexFieldCount] :=
       dados.FieldByName('PES_RGINSCEST').AsString;
 
-    qryCliente.Next;
+    dados.Next;
   end;
 
   try
@@ -671,6 +695,7 @@ begin
     '   :CST_PISCOFINS, :CEST, :NCM, :ALIQ, :CST_ICMS, :UN, :PRECO, :DESCRICAO, :CD_BARRAS, :CD_PRODUTO)');
 
   qryProduto.Params.ArraySize := dados.RecordCount;
+  dados.First;
   while not dados.Eof do
   begin
     qryProduto.Params[0].AsIntegers[dados.IndexFieldCount] :=
@@ -682,7 +707,7 @@ begin
     qryProduto.Params[3].AsStrings[dados.IndexFieldCount] :=
       dados.FieldByName('PES_RGINSCEST').AsString;
 
-    qryProduto.Next;
+    dados.Next;
   end;
 
   try
@@ -744,6 +769,15 @@ begin
   end;
 end;
 
+function TdmPrincipal.VerificarNull(valor: Variant): Variant;
+begin
+//  result := Ifthen(VarIsNull(valor), 0, valor);
+  if VarIsNull(valor) then
+    result := 0
+  else
+    result := valor;
+end;
+
 function TdmPrincipal.GravarEmpresa(dados: TFDMemTable): Boolean;
 var
   qryEmpresa: TFDquery;
@@ -759,46 +793,68 @@ begin
     '	:COMPLEMENTO, :RUA, :BAIRRO, :IBGECODIGO, :CIDADE, :UF, :CNPJ, :FANTASIA, :RAZAOSOCIAL, :ID )');
 
   qryEmpresa.Params.ArraySize := dados.RecordCount;
+  dados.First;
+
   while not dados.Eof do
   begin
-    qryEmpresa.Params[0].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('rtiCodigo').AsInteger;
-    qryEmpresa.Params[1].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('estCodigoibge').AsInteger;
-    qryEmpresa.Params[2].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('pesTelefon1').AsString;
-    qryEmpresa.Params[3].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('pesRginscest').AsString;
-    qryEmpresa.Params[4].AsCurrencys[dados.IndexFieldCount] :=
-      dados.FieldByName('pesAliquotacofins').AsCurrency;
-    qryEmpresa.Params[5].AsCurrencys[dados.IndexFieldCount] :=
-      dados.FieldByName('pesAliquotapis').AsCurrency;
-    qryEmpresa.Params[6].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('pesCep').AsInteger;
-    qryEmpresa.Params[7].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('pesNumero').AsInteger;
-    qryEmpresa.Params[8].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('estCodigoibge').AsString;
-    qryEmpresa.Params[9].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('pesRua').AsString;
-    qryEmpresa.Params[10].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('pesBairro').AsString;
-    qryEmpresa.Params[11].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('cidCodigoibge').AsString;
-    qryEmpresa.Params[12].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('cidNome').AsString;
-    qryEmpresa.Params[13].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('estSigla').AsString;
-    qryEmpresa.Params[14].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('pesCpfcnpj').AsString;
-    qryEmpresa.Params[15].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('pesNome').AsString;
-    qryEmpresa.Params[16].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('pesNome').AsString;
-    qryEmpresa.Params[15].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('pesCodigo').AsInteger;
+    qryEmpresa.Params[0].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('rtiCodigo').Value);
 
-    qryEmpresa.Next;
+    qryEmpresa.Params[1].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('estCodigoibge').Value);
+
+    qryEmpresa.Params[2].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesTelefone1').Value);
+
+    qryEmpresa.Params[3].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesRginscest').Value);
+
+    qryEmpresa.Params[4].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesAliquotacofins').Value);
+
+    qryEmpresa.Params[5].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesAliquotapis').Value);
+
+    qryEmpresa.Params[6].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesCep').Value);
+
+    qryEmpresa.Params[7].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesNumero').Value);
+
+    qryEmpresa.Params[7].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('estCodigoibge').Value);
+
+    qryEmpresa.Params[8].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('estCodigoibge').Value);
+
+    qryEmpresa.Params[9].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesRua').Value);
+
+    qryEmpresa.Params[10].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesBairro').Value);
+
+    qryEmpresa.Params[11].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('cidCodigoibge').Value);
+
+    qryEmpresa.Params[12].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('cidNome').Value);
+
+    qryEmpresa.Params[13].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('estSigla').Value);
+
+    qryEmpresa.Params[14].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesCpfcnpj').Value);
+
+    qryEmpresa.Params[15].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesNome').Value);
+
+    qryEmpresa.Params[16].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesNome').Value);
+
+    qryEmpresa.Params[17].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pesCodigo').Value);
+
+    dados.Next;
   end;
 
   try
@@ -854,7 +910,6 @@ begin
       qryNotaI.Append;
 
       rProdutoCupom.nrSequencia := fAchaNrSequencia(rCupom.nrDocumento, 'NOTAI');
-      rProdutoCupom.qtd := IfThen(rProdutoCupom.qtd > 0, rProdutoCupom.qtd, 1);
 
       {Dados de produto}
       qryNotaI.FieldByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
@@ -1236,6 +1291,47 @@ begin
   except on E: Exception do
     Log('fMarcarFavorito', E.Message);
   end;
+end;
+
+procedure TdmPrincipal.ModificarQuantidade(operacao: opQuantidade;
+  index: integer; qtd: String);
+var
+  qryQtd: TFDquery;
+  SQL: String;
+  valor: Double;
+begin
+  qryQtd := TFDquery.Create(nil);
+  qryQtd.Connection := conexao;
+
+  valor := StrToFloat(qtd);
+  qryQtd.SQL.Add('UPDATE NOTAI SET QTD = ');
+
+  if valor <> 1 then
+  begin
+    qryQtd.SQL.Add(' :QTD ');
+  end
+  else
+  begin
+    if operacao = ADD then
+      qryQtd.SQL.Add(' QTD + :QTD ')
+    else
+      qryQtd.SQL.Add(' QTD - :QTD ');
+  end;
+
+  qryQtd.SQL.Add(' WHERE NR_DOCUMENTO = :NR_DOCUMENTO ');
+  qryQtd.SQL.Add(' AND NR_SEQUENCIA = :NR_SEQUENCIA ');
+
+  qryQtd.ParamByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
+  qryQtd.ParamByName('NR_SEQUENCIA').AsInteger := rItemlista.nrSequencia;
+  qryQtd.ParamByName('QTD').AsFloat := valor;
+
+  try
+    qryQtd.ExecSQL;
+  finally
+    qryQtd.Free;
+    CalcularTotalItem(rItemlista.nrSequencia);
+  end;
+
 end;
 
 procedure TdmPrincipal.pRatearDescontoItem(const vlDesconto: Currency);

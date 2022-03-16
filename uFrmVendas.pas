@@ -16,10 +16,12 @@ uses
   FMX.ActnList, FMX.ListBox, uImpressao, Androidapi.JNI.Toast, StrUtils;
 type
   tpFinalizadora = (DINHEIRO, CREDITO, DEBITO, CHEQUE, PIX);
+  opQuantidade = (ADD, REMOVE);
 
   TItemLista = record
     nrSequencia: Integer;
     descricao: String;
+    quantidade: Double;
   end;
 
   TCupom = record
@@ -100,8 +102,6 @@ type
     ShadowEffect1: TShadowEffect;
     layTotais: TLayout;
     RoundRect1: TRoundRect;
-    rectQtd: TRectangle;
-    lblQuantidade: TLabel;
     layCorpo: TLayout;
     Layout2: TLayout;
     MultiView: TMultiView;
@@ -198,7 +198,8 @@ type
     Label23: TLabel;
     ShadowEffect4: TShadowEffect;
     edtQuantidade: TEdit;
-    stlMVendas: TStyleBook;
+    imgAdicionar: TImage;
+    imgRemover: TImage;
     procedure FormCreate(Sender: TObject);
     procedure FormVirtualKeyboardHidden(Sender: TObject; KeyboardVisible: Boolean; const Bounds: TRect);
     procedure FormVirtualKeyboardShown(Sender: TObject; KeyboardVisible: Boolean; const Bounds: TRect);
@@ -259,11 +260,12 @@ type
     procedure pFinalizarVenda;
     procedure pLimparDados;
     procedure pConsultarCliente;
-    procedure pFecharLays;
+    procedure FecharLays;
     procedure pMsgCancelarDesc;
     procedure pMsgSomenteAviso(titulo, texto: String);
     procedure AplicarQuantidade;
     procedure AbrirLayQuantidade;
+    procedure PrepararQuantidade(ItemObject: TListItemDrawable);
   public
     { Public declarations }
     function fTotaisCupom: boolean;
@@ -327,9 +329,10 @@ end;
 
 procedure TfrmVendas.AplicarQuantidade;
 begin
-  lblQuantidade.Text := IfThen(edtQuantidade.Text.ToDouble > 0, edtQuantidade.Text, '1');
-  rProdutoCupom.qtd := lblQuantidade.Text.ToDouble;
-  pFecharLays;
+  dmPrincipal.ModificarQuantidade(ADD, rItemlista.nrSequencia, edtQuantidade.Text);
+  if fTotaisCupom then
+    fCarregarItensVenda;
+  AbrirLayQuantidade;
 end;
 
 procedure TfrmVendas.btnCancelarDescClick(Sender: TObject);
@@ -339,7 +342,7 @@ end;
 
 procedure TfrmVendas.btnCancelarQtdClick(Sender: TObject);
 begin
-  pFecharLays;
+  FecharLays;
 end;
 
 procedure TfrmVendas.btnCancelarVlPagarClick(Sender: TObject);
@@ -405,7 +408,7 @@ end;
 
 function TfrmVendas.fTotaisCupom: boolean;
 begin
-  result := dmPrincipal.fCalcularTotaisCupom;
+  result := dmPrincipal.CalcularTotaisCupom;
   pAtualizarTela;
 end;
 
@@ -431,8 +434,10 @@ begin
                               qryNotaI.FieldByName('QTD').AsFloat);
           qryNotaI.Next;
         end;
+
       finally
         qryNotaI.Close;
+        fTotaisCupom;
       end;
     end;
   except
@@ -443,7 +448,7 @@ end;
 procedure TfrmVendas.FormCreate(Sender: TObject);
 begin
   TabControl.TabPosition := TTabPosition.None;
-  pFecharLays;
+  FecharLays;
   layCodigo.Height := 44;
   pLimparDados;
   pCarregarVendaAberta;
@@ -455,7 +460,7 @@ procedure TfrmVendas.FormKeyDown(Sender: TObject; var Key: Word;
 begin
   if key = vkHardwareBack then
   begin
-    pFecharLays;
+    FecharLays;
     Key := 0;
   end;
 end;
@@ -634,13 +639,37 @@ begin
   pMsgCancelarItem;
 end;
 
+procedure TfrmVendas.PrepararQuantidade(ItemObject: TListItemDrawable);
+begin
+  if ItemObject.Name = 'Image8' then
+    dmPrincipal.ModificarQuantidade(ADD, rItemlista.nrSequencia, '1')
+  else if (ItemObject.Name = 'Image9') and ((rItemlista.quantidade - 1) > 0) then
+    dmPrincipal.ModificarQuantidade(REMOVE, rItemlista.nrSequencia, '1')
+  else
+    Exit;
+
+  fCarregarItensVenda;
+end;
+
 procedure TfrmVendas.lvItensItemClickEx(const Sender: TObject;
   ItemIndex: Integer; const LocalClickPos: TPointF;
   const ItemObject: TListItemDrawable);
 begin
-  rItemlista.nrSequencia := ItemIndex;
+  rItemlista.nrSequencia :=
+    TListItemText(lvItens.items[ItemIndex].Objects.FindDrawable('Text1')).TagString.ToInteger;
   rItemLista.descricao :=
     TListItemText(lvItens.items[ItemIndex].Objects.FindDrawable('Text2')).TagString;
+  rItemLista.quantidade :=
+    StrToFloat(TListItemText(lvItens.items[ItemIndex].Objects.FindDrawable('Text11')).TagString);
+
+  if ItemObject is TListItemImage then
+    PrepararQuantidade(ItemObject)
+  else if ItemObject is TListItemText then
+  begin
+    if ItemObject.Name = 'Text11' then
+      AbrirLayQuantidade;
+  end;
+
 end;
 
 procedure TfrmVendas.pAbrirLayDesc;
@@ -699,7 +728,6 @@ begin
                         rprodutoCupom.qtd);
 
   edtCdProduto.Text := '';
-  edtQuantidade.Text := '1';
   rProdutoCupom := rProdutoVazio;
 
   fTotaisCupom;
@@ -709,6 +737,7 @@ procedure TfrmVendas.pAdicionarItemLista(const sequencia: Integer; const Codigo,
 var
   item: TListViewItem;
   txt: TListItemText;
+  img: TListItemImage;
 begin
   try
     item := lvItens.Items.Add;
@@ -730,13 +759,8 @@ begin
       txt.TagString := txt.Text;
 
       //Quantidade
-      txt := TlistItemText(Objects.FindDrawable('Text3'));
+      txt := TlistItemText(Objects.FindDrawable('Text11'));
       txt.Text := FormatFloat('0.000', Qtd);
-      txt.TagString := txt.Text;
-
-      //X
-      txt := TlistItemText(Objects.FindDrawable('Text4'));
-      txt.Text := 'x';
       txt.TagString := txt.Text;
 
       //Valor unitario
@@ -748,7 +772,17 @@ begin
       txt := TlistItemText(Objects.FindDrawable('Text6'));
       txt.Text := FormatCurr('R$ 0.00', Total);
       txt.TagString := txt.Text;
+
+      //Imagens Quantidade
+      img := TListItemImage(Objects.FindDrawable('Image8'));
+      img.TagString := 'Add';
+      img.Bitmap := imgAdicionar.Bitmap;
+
+      img := TListItemImage(Objects.FindDrawable('Image9'));
+      img.TagString := 'Remove';
+      img.Bitmap := imgRemover.Bitmap;
     end;
+
     PosicionarUltimoItemListView;
   except on E: Exception do
     Log('pAdicionarItemLista', E.Message);
@@ -789,7 +823,6 @@ begin
   lblDesconto.Text := FormatCurr('R$ 0.00', rCupom.vlDesconto);
   lblSubtotal.Text := FormatCurr('R$ 0.00', rCupom.vlSubTotal);
   lblQtItens.Text := rCupom.qtItens.ToString;
-  lblQuantidade.Text := '1';
 end;
 
 procedure TfrmVendas.pCarregarVendaAberta;
@@ -797,9 +830,8 @@ begin
   rCupom.nrDocumento := dmPrincipal.fDocumentoAberto;
   if rCupom.nrDocumento = 0 then
     Exit;
-    
-  if fTotaisCupom then
-    fCarregarItensVenda
+
+  fCarregarItensVenda;
 end;
 
 procedure TfrmVendas.pConsultarCliente;
@@ -847,7 +879,7 @@ begin
   end);
 end;
 
-procedure TfrmVendas.pFecharLays;
+procedure TfrmVendas.FecharLays;
 begin
   MultiView.HideMaster;
   layDescTotal.Visible := False;
@@ -1025,7 +1057,6 @@ begin
     Exit;
   end;
 
-  EdtQuantidade.Text := '0,000';
   Teclado(edtQuantidade);
   layQuantidade.Visible := True;
   edtQuantidade.SetFocus;

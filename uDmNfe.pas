@@ -372,7 +372,7 @@ begin
     Nota.Free;
   end;
 
-  rCupom.autNrLote := FormatDateTime('yymmddhhmm', NOW);
+  rCupom.autNrLote := '1';
 
   try
     AcbrNfe.NotasFiscais.GerarNFe;

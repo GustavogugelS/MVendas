@@ -205,7 +205,7 @@ end;
 
 procedure TfrmCnsNota.pCarregarNotaImpressao;
 begin
-  dmPrincipal.fCalcularTotaisCupom;
+  dmPrincipal.CalcularTotaisCupom;
   dmPrincipal.pCarregarDadosCliente;
   imprimir.ImprimirExtratoVenda;
 end;

@@ -11,14 +11,34 @@ uses
 
 type
   TfrmCnsCliente = class(TfrmCnsBase)
+    Layout3: TLayout;
+    rectNomeCpf: TRectangle;
+    Label1: TLabel;
+    rectInfNomeCPF: TRectangle;
+    Rectangle2: TRectangle;
+    Layout4: TLayout;
+    Layout5: TLayout;
+    SpeedButton1: TSpeedButton;
+    Label2: TLabel;
+    Layout6: TLayout;
+    rectNome: TRectangle;
+    edtNome: TEdit;
+    btnLimpaNome: TLabel;
+    rectCPF: TRectangle;
+    edtCPF: TEdit;
+    btnLimpaCPF: TLabel;
+    rectConfirma: TRoundRect;
+    SpeedButton2: TSpeedButton;
     procedure edtBuscaChangeTracking(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lvConsultaItemClickEx(const Sender: TObject; ItemIndex: Integer;
       const LocalClickPos: TPointF; const ItemObject: TListItemDrawable);
+    procedure btnVoltarClick(Sender: TObject);
   private
     { Private declarations }
     procedure pCarregarCliente;
     procedure pAdicionarClienteLista(const codigo: integer; const nome, cpf: String);
+    procedure CapturarDadosCliente(codigo: Integer = 1; nome: String = 'CONSUMIDOR'; cpf: String = '');
   public
     { Public declarations }
   end;
@@ -34,6 +54,20 @@ uses
 {$R *.fmx}
 
 { TfrmCnsCliente }
+
+procedure TfrmCnsCliente.btnVoltarClick(Sender: TObject);
+begin
+  inherited;
+  CapturarDadosCliente(1 , '', '')
+end;
+
+procedure TfrmCnsCliente.CapturarDadosCliente(codigo: Integer; nome,
+  cpf: String);
+begin
+  rCliCupom.cdCliente := codigo;
+  rCliCupom.nmCliente := nome;
+  rCliCupom.cpfCliente := cpf;
+end;
 
 procedure TfrmCnsCliente.edtBuscaChangeTracking(Sender: TObject);
 begin
@@ -51,12 +85,10 @@ procedure TfrmCnsCliente.lvConsultaItemClickEx(const Sender: TObject;
   ItemIndex: Integer; const LocalClickPos: TPointF;
   const ItemObject: TListItemDrawable);
 begin
-  rCliCupom.cdCliente :=
-    TListItemText(lvConsulta.items[ItemIndex].Objects.FindDrawable('Text1')).TagString.ToInteger;
-  rCliCupom.nmCliente :=
-    TListItemText(lvConsulta.items[ItemIndex].Objects.FindDrawable('Text2')).TagString;
-  rCliCupom.cpfCliente :=
-    TListItemText(lvConsulta.items[ItemIndex].Objects.FindDrawable('Text4')).TagString;
+  CapturarDadosCliente(
+    TListItemText(lvConsulta.items[ItemIndex].Objects.FindDrawable('Text1')).TagString.ToInteger,
+    TListItemText(lvConsulta.items[ItemIndex].Objects.FindDrawable('Text2')).TagString,
+    TListItemText(lvConsulta.items[ItemIndex].Objects.FindDrawable('Text4')).TagString);
 
   inherited;
 end;

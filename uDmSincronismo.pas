@@ -7,7 +7,8 @@ uses
   FireDAC.Stan.Option, FireDAC.Stan.Param, FireDAC.Stan.Error, FireDAC.DatS,
   FireDAC.Phys.Intf, FireDAC.DApt.Intf, REST.Response.Adapter, Data.DB,
   FireDAC.Comp.DataSet, FireDAC.Comp.Client, REST.Client, Data.Bind.Components,
-  Data.Bind.ObjectScope, uUtilitarios, FMX.Forms, StrUtils, Androidapi.JNI.Toast;
+  Data.Bind.ObjectScope, uUtilitarios, FMX.Forms, StrUtils, Androidapi.JNI.Toast,
+  JSON;
 
 type
   TdmSincronismo = class(TDataModule)
@@ -52,6 +53,7 @@ uses
 
 function TdmSincronismo.ReceberConfiguracao: Boolean;
 begin
+  rstRequest.Method := TRESTRequestMethod.rmGET;
   rstRequest.Resource := 'get_TEmpresaController\' + imei;
 
   try
@@ -76,6 +78,7 @@ begin
   Tloading.Show(formChamou, msg);
   TThread.CreateAnonymousThread(procedure
   begin
+
     ReceberEmpresa;
 
     TThread.Synchronize(nil, procedure
@@ -88,16 +91,26 @@ begin
 end;
 
 function TdmSincronismo.ReceberEmpresa: Boolean;
+var
+  json: TJsonObject;
 begin
-  rstRequest.Resource := 'get_TEmpresaController';
-  rstRequest.AddParameter('IMEI', ''
+
+  rstRequest.Body.ClearBody;
+  rstRequest.Params.Clear;
+
+  json := TJSONObject.Create;
+  json.AddPair('IMEI', '869129022553165');
+
+  rstRequest.Method := TRESTRequestMethod.rmPOST;
+  rstRequest.Resource := 'post_TEmpresaController';
+  rstRequest.Body.Add(json.ToString, ContentTypeFromString('application/json'));
 
   try
     rstRequest.Execute;
   except on E: Exception do
     begin
       Log('ReceberConfiguracao', 'Erro ao receber configuração : ' + e.Message);
-      Log('Retorno', ':' + rstResponse.Content);
+      result := False;
     end;
   end;
 
