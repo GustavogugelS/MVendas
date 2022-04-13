@@ -61,6 +61,7 @@ type
     function GravarPagBanco(const cdFinalizadora: Integer; const valor: Currency): Boolean;
     function ValidarLogin(user, senha: String): Boolean;
     function VerificarTemConfiguracao: Boolean;
+    function AcharNotaSincronizar: TFDquery;
 
     function GravarEmpresa(dados: TFDMemTable): Boolean;
     function GravarCliente(dados: TFDMemTable): Boolean;
@@ -189,13 +190,14 @@ function TdmPrincipal.fBuscarProduto(const cdBarras: String): TProdutoCupom;
 begin
   try
     qryProduto.Close;
+    qryProduto.ParamByName('DT_ATUAL').AsString := FormatDateTime('yyyy-mm-dd', now);
     qryProduto.ParamByName('CD_BARRAS').AsString := cdBarras;
     qryProduto.Open;
 
     if qryProduto.IsEmpty then
       Exit;
 
-    result.cdProduto := qryProduto.FieldByName('CD_PRODUTO').AsString;
+    result.cdProduto := qryProduto.FieldByName('CD_PRODUTO').AsInteger;
     result.cdBarras := cdBarras;
     result.descricao := qryProduto.FieldByName('DESCRICAO').AsString;
     result.preco := qryProduto.FieldByName('PRECO').AsCurrency;
@@ -565,8 +567,8 @@ var
       NotaItens := TItem.Create;
       NotaItens.nrDocumento := qryNotaI.FieldByName('NR_DOCUMENTO').AsInteger;
       NotaItens.nrSequencia := qryNotaI.FieldByName('NR_SEQUENCIA').AsInteger;
-      NotaItens.cdProduto := qryNotaI.FieldByName('CD_BARRAS').AsString;
-      NotaItens.cdBarras := qryNotaI.FieldByName('CD_PRODUTO').AsString;
+      NotaItens.cdProduto := qryNotaI.FieldByName('CD_PRODUTO').AsInteger;
+      NotaItens.cdBarras := qryNotaI.FieldByName('CD_BARRAS').AsString;
       NotaItens.descricao := qryNotaI.FieldByName('DESCRICAO').AsString;
       NotaItens.quantidade := qryNotaI.FieldByName('QTD').AsFloat;
       NotaItens.vlBruto := qryNotaI.FieldByName('VL_BRUTO').AsCurrency;
@@ -690,23 +692,25 @@ begin
 
   qryProduto.Sql.Add(
     ' INSERT INTO PRODUTO (PC_REDUCAO, GTIN, PESO_LIQUIDO, ATIVO, FAVORITO, NATUREZA_RECEITA, ' +
-    '   CST_PISCOFINS, CEST, NCM, ALIQ, CST_ICMS, UN, PRECO, DESCRICAO, CD_BARRAS, CD_PRODUTO) ' +
+    '   CST_PISCOFINS, CEST, NCM, ALIQ, CST_ICMS, UN, DESCRICAO, CD_BARRAS, CD_PRODUTO) ' +
     ' VALUES (:PC_REDUCAO, :GTIN, :PESO_LIQUIDO, :ATIVO, :FAVORITO, :NATUREZA_RECEITA, ' +
-    '   :CST_PISCOFINS, :CEST, :NCM, :ALIQ, :CST_ICMS, :UN, :PRECO, :DESCRICAO, :CD_BARRAS, :CD_PRODUTO)');
+    '   :CST_PISCOFINS, :CEST, :NCM, :ALIQ, :CST_ICMS, :UN, :DESCRICAO, :CD_BARRAS, :CD_PRODUTO)');
 
   qryProduto.Params.ArraySize := dados.RecordCount;
   dados.First;
   while not dados.Eof do
   begin
-    qryProduto.Params[0].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('RTI_CODIGO').AsInteger;
-    qryProduto.Params[1].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('EST_CODIGOIBGE').AsInteger;
-    qryProduto.Params[2].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('PES_TELEFONE1').AsString;
-    qryProduto.Params[3].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('PES_RGINSCEST').AsString;
-
+    qryProduto.Params[16].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proCodigo').Value);
+    qryProduto.Params[15].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proCodigoExterno').Value);
+    qryProduto.Params[14].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proNomereduzido').Value);
+    qryProduto.Params[13].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proPesoliquido').Value);
+    qryProduto.Params[12].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proPesoliquido').Value);
+    //TODO: Rafa precisa ajustar o SQL no servidor
     dados.Next;
   end;
 
@@ -771,7 +775,6 @@ end;
 
 function TdmPrincipal.VerificarNull(valor: Variant): Variant;
 begin
-//  result := Ifthen(VarIsNull(valor), 0, valor);
   if VarIsNull(valor) then
     result := 0
   else
@@ -914,7 +917,7 @@ begin
       {Dados de produto}
       qryNotaI.FieldByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
       qryNotaI.FieldByName('NR_SEQUENCIA').AsInteger := rProdutoCupom.nrSequencia;
-      qryNotaI.FieldByName('CD_PRODUTO').AsString := rProdutoCupom.cdProduto;
+      qryNotaI.FieldByName('CD_PRODUTO').AsInteger := rProdutoCupom.cdProduto;
       qryNotaI.FieldByName('CD_BARRAS').AsString := rProdutoCupom.cdBarras;
       qryNotaI.FieldByName('DESCRICAO').AsString := rProdutoCupom.descricao;
       qryNotaI.FieldByName('QTD').AsFloat := rProdutoCupom.qtd;
@@ -983,6 +986,31 @@ begin
       raise Exception.Create('Erro ao iniciar o cabeçalho: ' + e.Message);
     end;
   end;
+end;
+
+function TdmPrincipal.AcharNotaSincronizar: TFDquery;
+var
+  qry: TFDquery;
+begin
+  qry := TFDquery.Create(nil);
+  qry.Connection := conexao;
+
+  qry.SQL.Add('SELECT NR_DOCUMENTO FROM NOTAC WHERE SINC_EMISSAO = 0 AND STATUS = 2');
+
+  try
+
+    try
+      qry.Open;
+    except on E: Exception do
+      Log('Erro ao consultar notas não emitidas : ', e.Message);
+    end;
+
+    result := qry;
+
+  finally
+    qry.Free;
+  end;
+
 end;
 
 procedure TdmPrincipal.AtualizarStatusNota(const tipo: Integer);

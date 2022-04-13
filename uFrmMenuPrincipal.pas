@@ -61,23 +61,24 @@ end;
 
 procedure TfrmMenuPrincipal.IniciarSincronismo;
 begin
-//  Tloading.Show(Self, 'Aguarde');
-//  TThread.CreateAnonymousThread(procedure
-//  begin
-//    sleep(10000);
-//    //TODO: Chamar Sincronismo
-//
-//    TThread.Synchronize(nil, procedure
-//    begin
-//
-//      TLoading.Hide;
-//      ShowMessage('Sincronismo concluído');
-//
-//    end);
-//
-//  end).Start;
+  //TODO: Capturar IMEI do aparelho
+  Application.CreateForm(TDmSincronismo, dmSincronismo);
+  dmSincronismo.Imei := '869129022553165';
 
-  dmSincronismo.ReceberDados(frmMenuPrincipal);
+  TLoading.Show(self, 'Enviando/Recebendo');
+  TThread.CreateAnonymousThread(procedure
+  begin
+
+    dmSincronismo.ReceberDados;
+//    dmSincronismo.EnviarDados(frmMenuPrincipal);
+
+    TThread.Synchronize(nil, procedure
+    begin
+      TLoading.Hide;
+      dmSincronismo.Free;
+    end);
+
+  end).Start;
 end;
 
 procedure TfrmMenuPrincipal.Layout3Click(Sender: TObject);
@@ -93,8 +94,7 @@ end;
 
 procedure TfrmMenuPrincipal.Layout5Click(Sender: TObject);
 begin
-  dmSincronismo.Imei := '869129022553165';
-  dmSincronismo.ReceberDados(frmMenuPrincipal);
+  IniciarSincronismo;
 end;
 
 procedure TfrmMenuPrincipal.pAbrirPDV;

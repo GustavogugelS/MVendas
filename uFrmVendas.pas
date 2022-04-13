@@ -54,7 +54,7 @@ type
   end;
 
   TProdutoCupom = record
-    cdProduto: String;
+    cdProduto: Integer;
     cdBarras: String;
     nrSequencia: Integer;
     gtin: String;
@@ -244,7 +244,7 @@ type
   private
     procedure PosicionarUltimoItemListView;
     procedure pAdicionarItemCupom(cdBarras: String);
-    procedure pAdicionarItemLista(const sequencia: Integer; const Codigo, Barras, Nome: string; const vUnit, Total: Currency; const Qtd: Double);
+    procedure pAdicionarItemLista(const sequencia, Codigo: Integer; const Barras, Nome: string; const vUnit, Total: Currency; const Qtd: Double);
     procedure pAtualizarTela;
     procedure pCarregarVendaAberta;
     function fCarregarItensVenda: Boolean;
@@ -426,7 +426,7 @@ begin
         while not qryNotaI.Eof do
         begin
           pAdicionarItemLista(qryNotaI.FieldByName('NR_SEQUENCIA').AsInteger,
-                              qryNotaI.FieldByName('CD_PRODUTO').AsString,
+                              qryNotaI.FieldByName('CD_PRODUTO').AsInteger,
                               qryNotaI.FieldByName('CD_BARRAS').AsString,
                               qryNotaI.FieldByName('DESCRICAO').AsString,
                               qryNotaI.FieldByName('VL_BRUTO').AsCurrency,
@@ -711,7 +711,7 @@ begin
 
   if (cdBarras = '') or (rProdutoCupom.cdBarras = '') then
   begin
-    ShowMessage('Produto não encontrado.');
+    ShowMessage('Produto não encontrado ou sem preço de venda.');
     Exit;
   end;
 
@@ -733,7 +733,7 @@ begin
   fTotaisCupom;
 end;
 
-procedure TfrmVendas.pAdicionarItemLista(const sequencia: Integer; const Codigo, Barras, Nome: string; const vUnit, Total: Currency; const Qtd: Double);
+procedure TfrmVendas.pAdicionarItemLista(const sequencia, Codigo: Integer; const Barras, Nome: string; const vUnit, Total: Currency; const Qtd: Double);
 var
   item: TListViewItem;
   txt: TListItemText;

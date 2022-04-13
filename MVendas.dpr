@@ -35,6 +35,5 @@ begin
   Application.Initialize;
   Application.CreateForm(TdmPrincipal, dmPrincipal);
   Application.CreateForm(TfrmInicial, frmInicial);
-  Application.CreateForm(TdmSincronismo, dmSincronismo);
   Application.Run;
 end.

@@ -5,7 +5,7 @@ object dmPrincipal: TdmPrincipal
   Width = 901
   object conexao: TFDConnection
     Params.Strings = (
-      'Database=D:\Fontes\MVendas\Database\VENDAS.DB'
+      'Database=E:\Fontes\MVendas\Database\VENDAS.db'
       'OpenMode=ReadWrite'
       'LockingMode=Normal'
       'DriverID=SQLite')
@@ -21,7 +21,7 @@ object dmPrincipal: TdmPrincipal
       '    PRODUTO.CD_PRODUTO,'
       '    PRODUTO.CD_BARRAS,'
       '    PRODUTO.DESCRICAO,'
-      '    PRODUTO.PRECO,'
+      '    TABELA_PRECO_ITEM.PRECO,'
       '    COALESCE(PRODUTO.ALIQ, 0) ALIQ,'
       '    PRODUTO.CEST,'
       '    PRODUTO.NATUREZA_RECEITA,'
@@ -34,9 +34,14 @@ object dmPrincipal: TdmPrincipal
       '    PRODUTO.PC_REDUCAO'
       'FROM'
       '    PRODUTO'
+      
+        '    JOIN TABELA_PRECO_ITEM ON TABELA_PRECO_ITEM.CD_PRODUTO = PRO' +
+        'DUTO.CD_PRODUTO'
+      '    JOIN TABELA_PRECO ON TABELA_PRECO.ID = TABELA_PRECO_ITEM.ID'
       'WHERE'
       '    PRODUTO.CD_BARRAS = :CD_BARRAS AND'
-      '    PRODUTO.ATIVO = 1')
+      '    PRODUTO.ATIVO = 1  AND'
+      '    DATE(:DT_ATUAL) BETWEEN DATE(:DT_INI) AND DATE(:DT_FIN)')
     Left = 224
     Top = 24
     ParamData = <
@@ -45,6 +50,24 @@ object dmPrincipal: TdmPrincipal
         DataType = ftString
         ParamType = ptInput
         Value = '7898269396612'
+      end
+      item
+        Name = 'DT_ATUAL'
+        DataType = ftString
+        ParamType = ptInput
+        Value = Null
+      end
+      item
+        Name = 'DT_INI'
+        DataType = ftString
+        ParamType = ptInput
+        Value = Null
+      end
+      item
+        Name = 'DT_FIN'
+        DataType = ftString
+        ParamType = ptInput
+        Value = Null
       end>
   end
   object qryNotaC: TFDQuery

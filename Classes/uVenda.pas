@@ -8,9 +8,9 @@ uses
 type
   TItem = class
   private
-    FnrDocumento: INTEGER;
-    FnrSequencia: INTEGER;
-    FcdProduto: string;
+    FnrDocumento: Integer;
+    FnrSequencia: Integer;
+    FcdProduto: Integer;
     Fdescricao: string;
     Fquantidade: Double;
     FvlBruto: currency;
@@ -50,7 +50,7 @@ type
   public
     property nrDocumento: integer read FnrDocumento write FnrDocumento;
     property nrSequencia: integer read FnrSequencia write FnrSequencia;
-    property cdProduto: string read FcdProduto write FcdProduto;
+    property cdProduto: Integer read FcdProduto write FcdProduto;
     property descricao: string read Fdescricao write Fdescricao;
     property quantidade: Double read Fquantidade write Fquantidade;
     property vlBruto: currency read FvlBruto write FvlBruto;
