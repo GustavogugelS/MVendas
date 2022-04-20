@@ -172,10 +172,12 @@ begin
              '    PRODUTO.CD_PRODUTO, ' +
              '    PRODUTO.CD_BARRAS, ' +
              '    PRODUTO.DESCRICAO, ' +
-             '    PRODUTO.PRECO, ' +
+             '    TABELA_PRECO_ITEM.PRECO, ' +
              '    PRODUTO.FAVORITO ' +
              'FROM ' +
              '    PRODUTO ' +
+             '    JOIN TABELA_PRECO_ITEM ON TABELA_PRECO_ITEM.CD_PRODUTO = PRODUTO.CD_PRODUTO ' +
+             '    JOIN TABELA_PRECO ON TABELA_PRECO.ID = TABELA_PRECO_ITEM.ID ' +
              'WHERE ' +
              '    PRODUTO.ATIVO = 1 ';
 

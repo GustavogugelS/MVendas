@@ -41,7 +41,7 @@ type
     procedure pCarregarNotaImpressao;
     procedure pAutorizarNota;
     procedure pAdicionarNotaLista(const nrDocumento, nrNota, status,
-      sitNfce: Integer; const vlTotal: Currency; danfe, cliente: String);
+      sitNfce: Integer; const vlTotal: Currency; danfe, cliente, autMotivo: String);
   public
     { Public declarations }
   end;
@@ -97,17 +97,23 @@ begin
 
   case index of
     1: dmNfe.ReimprimirNota;
-    {TODO: Autorizar nota feita}
+    2: begin
+      dmPrincipal.CalcularImposto;
+      dmNfe.EmitirNota;
+      dmPrincipal.AtualizarStatusNota;
+    end;
     3: pMsgCancelarNota;
   end;
 end;
 
 procedure TfrmCnsNota.pAdicionarNotaLista(const nrDocumento, nrNota,
-  status, sitNfce: Integer; const vlTotal: Currency; danfe, cliente: String);
+  status, sitNfce: Integer; const vlTotal: Currency; danfe, cliente, autMotivo: String);
 var
   item: TListViewItem;
   txt: TListItemText;
   img: TListItemImage;
+
+  motivo: String;
 begin
   try
     item := lvConsulta.Items.Add;
@@ -143,11 +149,29 @@ begin
       img := TListItemImage(Objects.FindDrawable('Image5'));
       img.TagString := sitNfce.ToString;
       case sitNfce of
-        0: img.Bitmap := nil;
-        100: img.Bitmap := imgEmitido.Bitmap;
-        101: img.Bitmap := imgCancelado.Bitmap;
-        else img.Bitmap := imgPendente.Bitmap;
+        0: begin
+          motivo := '0 - Não Emitida';
+          img.Bitmap := nil;
+        end;
+        100: begin
+          motivo := '100 - Emitida';
+          img.Bitmap := imgEmitido.Bitmap;
+        end;
+        101: begin
+          motivo := '101 - Cancelada';
+          img.Bitmap := imgCancelado.Bitmap;
+        end
+        else
+        begin
+          motivo := sitNfce.ToString + ' - ' + autMotivo;
+          img.Bitmap := imgPendente.Bitmap;
+        end;
       end;
+
+      {Motivo}
+      txt := TlistItemText(Objects.FindDrawable('Text7'));
+      txt.Text := motivo;
+      txt.TagString := txt.Text;
     end;
   Except on E: Exception do
     Log('pAdicionarNotaLista', E.Message);
@@ -172,7 +196,8 @@ begin
              '    VL_TOTAL, ' +
              '    NOME_CLIENTE, ' +
              '    STATUS, ' +
-             '    SITUACAO_NFCE ' +
+             '    SITUACAO_NFCE, ' +
+             '    AUT_MOTIVO ' +
              'FROM ' +
              '    NOTAC ' +
              'ORDER BY SITUACAO_NFCE DESC';
@@ -192,7 +217,8 @@ begin
                             qryConsulta.FieldByName('SITUACAO_NFCE').AsInteger,
                             qryConsulta.FieldByName('VL_TOTAL').AsCurrency,
                             qryConsulta.FieldByName('DANFE').AsString,
-                            qryConsulta.FieldByName('NOME_CLIENTE').AsString);
+                            qryConsulta.FieldByName('NOME_CLIENTE').AsString,
+                            qryConsulta.FieldByName('AUT_MOTIVO').AsString);
         qryConsulta.Next;
       end;
     finally

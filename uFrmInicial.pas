@@ -42,6 +42,7 @@ type
     { Private declarations }
     procedure pTratarSlide(const slide: Integer);
     procedure pAbrirLogin(const temConfig: Boolean = True);
+    procedure PrimeiroSincronismo;
 
     { Public declarations }
   end;
@@ -52,7 +53,7 @@ var
 implementation
 
 uses
-  uFrmLogin, uDmPrincipal;
+  uFrmLogin, uDmPrincipal, uUtilitarios, uDmSincronismo, uConfiguracao, Loading;
 
 {$R *.fmx}
 { TfrmInicial }
@@ -70,7 +71,7 @@ begin
   else if Circle2.Fill.Color = $FF425A9A then
     pTratarSlide(3)
   else if Circle3.Fill.Color = $FF425A9A then
-    pAbrirLogin(False);
+    PrimeiroSincronismo;
 end;
 
 procedure TfrmInicial.lblVoltarClick(Sender: TObject);
@@ -83,17 +84,33 @@ end;
 
 procedure TfrmInicial.pAbrirLogin(const temConfig: Boolean = True);
 begin
-  if Assigned(frmLogin) then
-    frmLogin.Free;
-
   Application.CreateForm(TFrmLogin, frmLogin);
-  if temConfig then
-    frmLogin.actTabLogin.ExecuteTarget(nil)
-  else
-    frmLogin.actTabConfig.ExecuteTarget(nil);
+
+  frmLogin.actTabLogin.ExecuteTarget(nil);
 
   Application.MainForm := frmLogin;
   frmLogin.Show;
+end;
+
+procedure TfrmInicial.PrimeiroSincronismo;
+begin
+  Application.CreateForm(TdmSincronismo, dmSincronismo);
+  dmSincronismo.Imei := ConfigLocal.Imei;
+
+  TLoading.Show(Self, 'Atualizando...');
+  TThread.CreateAnonymousThread(procedure
+  begin
+
+    dmSincronismo.ReceberDados;
+
+    TThread.Synchronize(nil, procedure
+    begin
+      TLoading.Hide;
+      dmSincronismo.Free;
+      pAbrirLogin;
+    end);
+
+  end).Start;
 end;
 
 procedure TfrmInicial.pTratarSlide(const slide: Integer);

@@ -35,7 +35,6 @@ type
     { Private declarations }
     procedure pAbrirPDV;
     procedure SairMenuPrincipal;
-    procedure IniciarSincronismo;
   public
     { Public declarations }
   end;
@@ -46,7 +45,7 @@ var
 implementation
 
 uses
-  uFrmVendas, uDmNfe, Loading, uFrmLogin, uDmSincronismo;
+  uFrmVendas, uDmNfe, Loading, uFrmLogin, uDmSincronismo, uUtilitarios;
 
 {$R *.fmx}
 
@@ -57,28 +56,6 @@ begin
   begin           
         
   end;
-end;
-
-procedure TfrmMenuPrincipal.IniciarSincronismo;
-begin
-  //TODO: Capturar IMEI do aparelho
-  Application.CreateForm(TDmSincronismo, dmSincronismo);
-  dmSincronismo.Imei := '869129022553165';
-
-  TLoading.Show(self, 'Enviando/Recebendo');
-  TThread.CreateAnonymousThread(procedure
-  begin
-
-    dmSincronismo.ReceberDados;
-//    dmSincronismo.EnviarDados(frmMenuPrincipal);
-
-    TThread.Synchronize(nil, procedure
-    begin
-      TLoading.Hide;
-      dmSincronismo.Free;
-    end);
-
-  end).Start;
 end;
 
 procedure TfrmMenuPrincipal.Layout3Click(Sender: TObject);
@@ -94,7 +71,7 @@ end;
 
 procedure TfrmMenuPrincipal.Layout5Click(Sender: TObject);
 begin
-  IniciarSincronismo;
+  IniciarSincronismo(Self, 'Atualizando...');
 end;
 
 procedure TfrmMenuPrincipal.pAbrirPDV;

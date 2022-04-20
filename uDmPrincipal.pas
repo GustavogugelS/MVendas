@@ -190,7 +190,6 @@ function TdmPrincipal.fBuscarProduto(const cdBarras: String): TProdutoCupom;
 begin
   try
     qryProduto.Close;
-    qryProduto.ParamByName('DT_ATUAL').AsString := FormatDateTime('yyyy-mm-dd', now);
     qryProduto.ParamByName('CD_BARRAS').AsString := cdBarras;
     qryProduto.Open;
 
@@ -336,6 +335,8 @@ begin
     configLocal.FLSomErro := qryConfiguracao.FieldByName('FL_SOMERRO').AsInteger;
     configLocal.FlSomsucesso := qryConfiguracao.FieldByName('FL_SOMSUCESSO').AsInteger;
     configLocal.VersaoBanco := qryConfiguracao.FieldByName('VERSAOBANCO').AsInteger;
+    configLocal.Imei := qryConfiguracao.FieldByName('IMEI').AsString;
+
   finally
     qryConfiguracao.Free;
   end;
@@ -529,6 +530,8 @@ var
     Nota.nrNota := qryNotaC.FieldByName('NR_NOTA').AsInteger;
     Nota.nrSerie := qryNotaC.FieldByName('NR_SERIE').AsInteger;
     Nota.cdCaixa := qryNotaC.FieldByName('CD_CAIXA').AsInteger;
+    Nota.ufOrigem := qryNotaC.FieldByName('UF_ORIGEM').AsString;
+    Nota.ufDestino := qryNotaC.FieldByName('UF_DESTINO').AsString;
     Nota.cancelado := qryNotaC.FieldByName('CANCELADO').AsInteger;
     Nota.dtVenda := qryNotaC.FieldByName('DTH_VENDA').AsString;
     Nota.dtEmissao := qryNotaC.FieldByName('DTH_EMISSAO').AsString;
@@ -976,6 +979,8 @@ begin
       qryNotaC.FieldByName('CD_CAIXA').AsInteger := 1;
       qryNotaC.FieldByName('DTH_VENDA').AsString := FormatDateTime('dd/mm/yyyy hh:mm', now);
       qryNotaC.FieldByName('CD_CLIENTE').AsInteger := 1;
+      qryNotaC.FieldByName('UF_ORIGEM').Asstring := Empresa.UF;
+      qryNotaC.FieldByName('UF_DESTINO').AsString := Empresa.UF;
       qryNotaC.Post;
 
       rCupom.nrDocumento := fAchaNrDocumento;
@@ -1143,7 +1148,7 @@ begin
         '	  NOTAI ' +
         'SET ' +
         '	  VL_BASE_ICMS = VL_TOTAL - (VL_TOTAL * PC_REDUCAO / 100), ' +
-        '	  VL_ICMS = (VL_TOTAL - (VL_TOTAL * PC_REDUCAO / 100)) * ALIQ_ICMS / 100, ' +
+        '	  VL_ICMS = CAST(VL_TOTAL - (VL_TOTAL * PC_REDUCAO / 100) AS FLOAT) * CAST(ALIQ_ICMS AS FLOAT) / 100, ' +
         '	  VL_REDUCAO = (VL_TOTAL * PC_REDUCAO / 100) ' +
         'WHERE ' +
         '   NR_DOCUMENTO = ' + rCupom.nrDocumento.ToString + ' AND ' +

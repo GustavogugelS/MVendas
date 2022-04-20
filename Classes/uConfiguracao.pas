@@ -56,6 +56,7 @@ type
       FFLSomErro: Integer;
       FFlEconomiaPapel: Integer;
       FcdPreco: Integer;
+      FImei: String;
 
     public
       property Id: Integer read FId write FId;
@@ -67,6 +68,7 @@ type
       property CdPreco: Integer read FCdPreco write FCdPreco;
       property VersaoBanco: Integer read FVersaoBanco write FVersaoBanco;
       property DtUltSinc: TDate read FDtUltSinc write FDtUltSinc;
+      property Imei: String read FImei write FImei;
   end;
 
   TEmpresa = class

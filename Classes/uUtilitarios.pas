@@ -4,7 +4,8 @@ interface
 
   uses
     FMX.ListView, FMX.ListView.Appearances, FMX.ListView.Types, System.SysUtils,
-    FMX.VirtualKeyboard, FMX.Platform, FMX.Edit, FMX.Platform.Android;
+    FMX.VirtualKeyboard, FMX.Platform, FMX.Edit, FMX.Platform.Android, FMX.Forms,
+    System.Classes;
 
   type
     TUtilitarios = class
@@ -22,22 +23,45 @@ interface
     procedure pAddLista(lista: TListView; texto: String; indice: Integer = 0);
     procedure Teclado(edt: TEdit);
 
+    procedure IniciarSincronismo(quemChamou: TForm; msg: String = 'Aguarde...');
+
     function CapTurarImei: String;
 
 implementation
 
 uses
   System.Permissions, Androidapi.Helpers, Androidapi.JNI.Telephony,
-  Androidapi.JNI.OS;
+  Androidapi.JNI.OS, uDmSincronismo, Loading, uConfiguracao;
 
 { TUtilitarios }
 
 function CapturarImei: String;
 var
-  tm: JTelephonyManager;
+  TM: JTelephonyManager;
 begin
-  tm := TJTelephonyManager.Create;
-  result := JStringToString(tm.getImei);
+  TM := TJTelephonyManager.Create;
+  result := JStringToString(TM.getImei);
+end;
+
+procedure IniciarSincronismo(quemChamou: TForm; msg: String);
+begin
+  Application.CreateForm(TDmSincronismo, dmSincronismo);
+  dmSincronismo.Imei := ConfigLocal.Imei;
+
+  TLoading.Show(quemChamou, msg);
+  TThread.CreateAnonymousThread(procedure
+  begin
+
+    dmSincronismo.ReceberDados;
+    dmSincronismo.EnviarDados;
+
+    TThread.Synchronize(nil, procedure
+    begin
+      TLoading.Hide;
+      dmSincronismo.Free;
+    end);
+
+  end).Start;
 end;
 
 procedure Teclado(edt: TEdit);

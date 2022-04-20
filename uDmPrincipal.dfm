@@ -37,11 +37,9 @@ object dmPrincipal: TdmPrincipal
       
         '    JOIN TABELA_PRECO_ITEM ON TABELA_PRECO_ITEM.CD_PRODUTO = PRO' +
         'DUTO.CD_PRODUTO'
-      '    JOIN TABELA_PRECO ON TABELA_PRECO.ID = TABELA_PRECO_ITEM.ID'
       'WHERE'
       '    PRODUTO.CD_BARRAS = :CD_BARRAS AND'
-      '    PRODUTO.ATIVO = 1  AND'
-      '    DATE(:DT_ATUAL) BETWEEN DATE(:DT_INI) AND DATE(:DT_FIN)')
+      '    PRODUTO.ATIVO = 1')
     Left = 224
     Top = 24
     ParamData = <
@@ -49,25 +47,7 @@ object dmPrincipal: TdmPrincipal
         Name = 'CD_BARRAS'
         DataType = ftString
         ParamType = ptInput
-        Value = '7898269396612'
-      end
-      item
-        Name = 'DT_ATUAL'
-        DataType = ftString
-        ParamType = ptInput
-        Value = Null
-      end
-      item
-        Name = 'DT_INI'
-        DataType = ftString
-        ParamType = ptInput
-        Value = Null
-      end
-      item
-        Name = 'DT_FIN'
-        DataType = ftString
-        ParamType = ptInput
-        Value = Null
+        Value = ''
       end>
   end
   object qryNotaC: TFDQuery

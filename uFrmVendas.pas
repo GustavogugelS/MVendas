@@ -39,6 +39,7 @@ type
     autNrProtocolo: String;
     autXmlVenda: String;
     autSituacaoNfce: String;
+    autMotivo: String;
     autQrCode: String;
     autNrLote: String;
     autRecibo: String;

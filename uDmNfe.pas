@@ -414,6 +414,7 @@ begin
   rCupom.autDtProcessamento := FormatDateTime('dd/mm/yyyy', Date);
   rCupom.autHrprocessamento := FormatDateTime('hh:nn:ss', Now);
   rCupom.autRecibo := ACBrNFe.WebServices.Recibo.NFeRetorno.nRec;
+  rCupom.autMotivo := ACBrNFe.WebServices.Recibo.NFeRetorno.xMotivo;
 end;
 
 procedure TdmNfe.CancelarNota;

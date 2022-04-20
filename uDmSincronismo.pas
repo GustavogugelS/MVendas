@@ -21,10 +21,13 @@ type
     { Private declarations }
     FImei: String;
 
+    procedure ConfigurarREST;
+
       //Recebimento
     function ReceberEmpresa: Boolean;
     function ReceberCliente: Boolean;
     function ReceberProduto: Boolean;
+
     {TODO:
       function ReceberCliente: Boolean;
       function ReceberUsuario: Boolean;
@@ -48,13 +51,19 @@ var
 implementation
 
 uses
-  Loading, uDmPrincipal;
+  Loading, uDmPrincipal, uConfiguracao;
 
 {%CLASSGROUP 'FMX.Controls.TControl'}
 
 {$R *.dfm}
 
 { TdmSincronismo }
+
+procedure TdmSincronismo.ConfigurarREST;
+begin
+  rstClient.BaseURL := 'http://' + Configuracao.Ipservidor + ':' +
+                          Configuracao.portaServidor.ToString;
+end;
 
 procedure TdmSincronismo.EnviarDados(documento: Integer);
 var
@@ -76,26 +85,35 @@ var
     //TODO: Pedir para o Rafa o EndPoint
     //TODO: Passar para o Rafa o modelo do JSON
 
+    Log(TJson.ObjectToJsonString(Nota), '');
+
     rstRequest.Body.Add(json.ToString, ContentTypeFromString('application/json'));
     rstRequest.Body.Add(TJson.ObjectToJsonString(Nota), ContentTypeFromString('application/json'));
   end;
 
 begin
+  ConfigurarREST;
 
-  if documento = 0 then
-  begin
-    qryDocumentos := dmPrincipal.AcharNotaSincronizar;
+  try
+    Nota := TVenda.Create;
 
-    qryDocumentos.First;
-    while not qryDocumentos.Eof do
+    if documento = 0 then
     begin
+      qryDocumentos := dmPrincipal.AcharNotaSincronizar;
 
-      dmPrincipal.DadosDaNota(qryDocumentos.FieldByName('NR_DOCUMENTO').AsInteger, Nota);
-      Post;
-      Nota := nil;
+      qryDocumentos.First;
+      while not qryDocumentos.Eof do
+      begin
 
-      qryDocumentos.Next;
+        dmPrincipal.DadosDaNota(qryDocumentos.FieldByName('NR_DOCUMENTO').AsInteger, Nota);
+        Post;
+        Nota := nil;
+
+        qryDocumentos.Next;
+      end;
     end;
+  except on E: Exception do
+    Log('EnviarDados', e.Message);
   end;
 end;
 
@@ -108,10 +126,10 @@ begin
   rstRequest.Params.Clear;
 
   json := TJSONObject.Create;
-  json.AddPair('IMEI', '869129022553165');
+  json.AddPair('IMEI', Imei);
 
   rstRequest.Method := TRESTRequestMethod.rmPOST;
-  rstRequest.Resource := 'post_ProdutoController';
+  rstRequest.Resource := 'post_ClienteController';
   rstRequest.Body.Add(json.ToString, ContentTypeFromString('application/json'));
 
   try
@@ -129,6 +147,8 @@ end;
 
 procedure TdmSincronismo.ReceberDados;
 begin
+  ConfigurarREST;
+
   if ReceberEmpresa then
 //    ReceberProduto;
 end;
@@ -142,7 +162,7 @@ begin
   rstRequest.Params.Clear;
 
   json := TJSONObject.Create;
-  json.AddPair('IMEI', '869129022553165');
+  json.AddPair('IMEI', Imei);
 
   rstRequest.Method := TRESTRequestMethod.rmPOST;
   rstRequest.Resource := 'post_TEmpresaController';
@@ -170,7 +190,7 @@ begin
   rstRequest.Params.Clear;
 
   json := TJSONObject.Create;
-  json.AddPair('IMEI', '869129022553165');
+  json.AddPair('IMEI', Imei);
 
   rstRequest.Method := TRESTRequestMethod.rmPOST;
   rstRequest.Resource := 'post_TProdutoController';

@@ -61,6 +61,7 @@ type
     function FazerLogin: Boolean;
   public
     { Public declarations }
+
   end;
 
 var
