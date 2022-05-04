@@ -846,7 +846,7 @@ procedure TfrmVendas.pConsultarCliente;
       pPadraoPergunta;
       lblTitulo.Text := 'Identificar Cliente';
       lblMsg.Text := 'Deseja alterar o cliente informado?' + #13 +
-                     copy(rCliCupom.nmCliente, 0, 25);
+                     copy(ifThen(rCliCupom.nmCliente = '', 'CONSUMIDOR', rCliCupom.nmCliente), 0, 25);
     end;
 
     frmMensagem.ShowModal(
@@ -921,7 +921,7 @@ begin
   rCupom := rCupomVazio;
   rCliCupom := rCliCupomVazio;
   rCliCupom.cdCliente := 1;
-  rCliCupom.nmCliente := 'CONSUMIDOR';
+  rCliCupom.nmCliente := '';
 
   pAtualizarTela;
   lvItens.Items.Clear;

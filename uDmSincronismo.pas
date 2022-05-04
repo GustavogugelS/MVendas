@@ -13,34 +13,31 @@ uses
 type
   TdmSincronismo = class(TDataModule)
     rstClient: TRESTClient;
-    rstRequest: TRESTRequest;
-    rstResponse: TRESTResponse;
     fdMemTable: TFDMemTable;
     rstAdapter: TRESTResponseDataSetAdapter;
+    rstRequest: TRESTRequest;
+    rstResponse: TRESTResponse;
   private
     { Private declarations }
     FImei: String;
+    FImeiJson: String;
 
     procedure ConfigurarREST;
 
-      //Recebimento
-    function ReceberEmpresa: Boolean;
-    function ReceberCliente: Boolean;
-    function ReceberProduto: Boolean;
+    function ReceberEmpresa: Boolean; {Receber}
+    function ReceberCliente: Boolean; {Receber}
+    function ReceberProduto: Boolean; {Receber}
+    function ReceberUsuario: Boolean; {Receber}
 
-    {TODO:
-      function ReceberCliente: Boolean;
-      function ReceberUsuario: Boolean;
-    }
-
-      //Envio
-
+    procedure SetImei(const Value: String);
 
   public
     { Public declarations }
-    property Imei: String read FImei write FImei;
+    property Imei: String read FImei write SetImei;
+    property ImeiJson: String read FImeiJson write FImeiJson;
 
-    procedure ReceberDados;
+
+    function ReceberDados: Boolean;
     procedure EnviarDados(documento: Integer = 0);
 
   end;
@@ -77,8 +74,13 @@ var
     rstRequest.Body.ClearBody;
     rstRequest.Params.Clear;
 
-    json := TJSONObject.Create;
-    json.AddPair('IMEI', '869129022553165');
+    with rstRequest.Params.AddItem do
+    begin
+      ContentType := ctAPPLICATION_JSON;
+      name        := 'body';
+      Value       := ImeiJson;
+      Kind        := pkREQUESTBODY;
+    end;
 
     rstRequest.Method := TRESTRequestMethod.rmPOST;
     rstRequest.Resource := 'post_NotaCController';
@@ -87,7 +89,6 @@ var
 
     Log(TJson.ObjectToJsonString(Nota), '');
 
-    rstRequest.Body.Add(json.ToString, ContentTypeFromString('application/json'));
     rstRequest.Body.Add(TJson.ObjectToJsonString(Nota), ContentTypeFromString('application/json'));
   end;
 
@@ -125,55 +126,70 @@ begin
   rstRequest.Body.ClearBody;
   rstRequest.Params.Clear;
 
-  json := TJSONObject.Create;
-  json.AddPair('IMEI', Imei);
+  with rstRequest.Params.AddItem do
+  begin
+    ContentType := ctAPPLICATION_JSON;
+    name        := 'body';
+    Value       := ImeiJson;
+    Kind        := pkREQUESTBODY;
+  end;
 
   rstRequest.Method := TRESTRequestMethod.rmPOST;
-  rstRequest.Resource := 'post_ClienteController';
-  rstRequest.Body.Add(json.ToString, ContentTypeFromString('application/json'));
+  rstRequest.Resource := 'post_TPessoaController';
 
   try
     rstRequest.Execute;
+    Log(rstResponse.Content, '');
+
   except on E: Exception do
     begin
-      Log('ReceberConfiguracao', 'Erro ao receber configuração : ' + e.Message);
+      Log('ReceberPessoa', 'Erro ao receber pessoa : ' + e.Message);
       result := False;
     end;
   end;
 
   fdMemTable.Open;
-  result := dmPrincipal.GravarEmpresa(fdMemTable);
+  result := dmPrincipal.GravarCliente(fdMemTable);
 end;
 
-procedure TdmSincronismo.ReceberDados;
+function TdmSincronismo.ReceberDados: Boolean;
 begin
+  result := false;
   ConfigurarREST;
 
   if ReceberEmpresa then
-//    ReceberProduto;
+    if ReceberUsuario then
+      if ReceberProduto then
+        if ReceberCliente then
+          result := true;
+
 end;
 
 function TdmSincronismo.ReceberEmpresa: Boolean;
-var
-  json: TJsonObject;
 begin
-
+  fdMemTable.Close;
   rstRequest.Body.ClearBody;
   rstRequest.Params.Clear;
 
-  json := TJSONObject.Create;
-  json.AddPair('IMEI', Imei);
+  with rstRequest.Params.AddItem do
+  begin
+    ContentType := ctAPPLICATION_JSON;
+    name        := 'body';
+    Value       := ImeiJson;
+    Kind        := pkREQUESTBODY;
+  end;
 
   rstRequest.Method := TRESTRequestMethod.rmPOST;
   rstRequest.Resource := 'post_TEmpresaController';
-  rstRequest.Body.Add(json.ToString, ContentTypeFromString('application/json'));
 
   try
     rstRequest.Execute;
+
   except on E: Exception do
     begin
       Log('ReceberEmpresa', 'Erro ao receber empresa : ' + e.Message);
       result := False;
+      Exit;
     end;
   end;
 
@@ -182,31 +198,86 @@ begin
 end;
 
 function TdmSincronismo.ReceberProduto: Boolean;
-var
-  json: TJsonObject;
 begin
-
+  fdMemTable.Close;
   rstRequest.Body.ClearBody;
   rstRequest.Params.Clear;
 
-  json := TJSONObject.Create;
-  json.AddPair('IMEI', Imei);
+  with rstRequest.Params.AddItem do
+  begin
+    ContentType := ctAPPLICATION_JSON;
+    name        := 'body';
+    Value       := ImeiJson;
+    Kind        := pkREQUESTBODY;
+  end;
 
   rstRequest.Method := TRESTRequestMethod.rmPOST;
   rstRequest.Resource := 'post_TProdutoController';
-  rstRequest.Body.Add(json.ToString, ContentTypeFromString('application/json'));
 
   try
+
     rstRequest.Execute;
+
+    Log(rstResponse.StatusCode.ToString, rstResponse.StatusText);
+
+    if rstResponse.StatusCode <> 200 then
+      raise Exception.Create('IMEI Não encontrado');
+
   except on E: Exception do
     begin
-      Log('ReceberEmpresa', 'Erro ao receber empresa : ' + e.Message);
+      Log('ReceberProduto', 'Erro ao receber produto : ' + e.Message);
       result := False;
+      Exit;
     end;
   end;
 
   fdMemTable.Open;
-  result := dmPrincipal.GravarProduto(fdMemTable); //Falta terminar implementação
+  result := dmPrincipal.GravarProduto(fdMemTable);
+end;
+
+function TdmSincronismo.ReceberUsuario: Boolean;
+begin
+  fdMemTable.Close;
+  rstRequest.Body.ClearBody;
+  rstRequest.Params.Clear;
+
+  with rstRequest.Params.AddItem do
+  begin
+    ContentType := ctAPPLICATION_JSON;
+    name        := 'body';
+    Value       := ImeiJson;
+    Kind        := pkREQUESTBODY;
+  end;
+
+  rstRequest.Method := TRESTRequestMethod.rmPOST;
+  rstRequest.Resource := 'post_TUsuarioController';
+
+  try
+
+    rstRequest.Execute;
+
+  except on E: Exception do
+    begin
+      Log('ReceberUsuario', 'Erro ao receber usuario : ' + e.Message);
+      result := False;
+      Log(rstResponse.StatusCode.ToString, rstResponse.StatusText);
+      Exit;
+    end;
+  end;
+
+  fdMemTable.Open;
+  result := dmPrincipal.GravarUsuario(fdMemTable);
+end;
+
+procedure TdmSincronismo.SetImei(const Value: String);
+var
+  json: TJSONObject;
+begin
+  json := TJSONObject.Create;
+  json.AddPair('IMEI', Value);
+
+  FImei := Value;
+  ImeiJson := json.ToString;
 end;
 
 end.

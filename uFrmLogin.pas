@@ -24,7 +24,7 @@ type
     Layout3: TLayout;
     rectBtnEntrar: TRectangle;
     btnEntrar: TSpeedButton;
-    Label1: TLabel;
+    lblEsqueceuSenha: TLabel;
     tabConfig: TTabItem;
     Layout4: TLayout;
     Layout5: TLayout;

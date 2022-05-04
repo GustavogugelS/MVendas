@@ -17,6 +17,7 @@ type
                 Valor, Money, CEP, Dt, Peso);
 
 procedure Formatar(Obj: TObject; Formato : TFormato; Extra : string = '');
+function SomenteNumero(str : string) : string;
 
 implementation
 

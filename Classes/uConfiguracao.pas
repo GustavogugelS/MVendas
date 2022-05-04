@@ -14,8 +14,6 @@ type
       FSerie: Integer;
       FModelo: Integer;
       FId: Integer;
-      FCFOP: Integer;
-      FCFOPST: Integer;
       FCaixaCodigo: Integer;
       FIdCSC: Integer;
       FCSC: String;
@@ -35,8 +33,6 @@ type
       property Serie: Integer read FSerie write FSerie;
       property Modelo: Integer read FModelo write FModelo;
       property Homologacao: Integer read FHomologacao write FHomologacao;
-      property CFOP: Integer read FCFOP write FCFOP;
-      property CFOPST: Integer read FCFOPST write FCFOPST;
       property IdCsc: Integer read FIdCSC write FIdCSC;
       property Csc: String read FCSC write FCSC;
       property UrlPFX: String read FUrlPFX write FUrlPFX;

@@ -93,21 +93,30 @@ begin
 end;
 
 procedure TfrmInicial.PrimeiroSincronismo;
+var
+  recebeu: boolean;
 begin
   Application.CreateForm(TdmSincronismo, dmSincronismo);
-  dmSincronismo.Imei := ConfigLocal.Imei;
+  dmSincronismo.Imei := CapTurarImei;
 
   TLoading.Show(Self, 'Atualizando...');
   TThread.CreateAnonymousThread(procedure
   begin
 
-    dmSincronismo.ReceberDados;
+    recebeu := dmSincronismo.ReceberDados;
 
     TThread.Synchronize(nil, procedure
     begin
+      if not recebeu then
+        ShowMessage('Ops, algo deu errado. Verifique a conexão ou entre em contato com o suporte.')
+      else
+      begin
+        dmPrincipal.GravarIMEI;
+        pAbrirLogin;
+      end;
+
       TLoading.Hide;
       dmSincronismo.Free;
-      pAbrirLogin;
     end);
 
   end).Start;

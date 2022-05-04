@@ -59,13 +59,15 @@ type
     function GravarVendaBanco: Boolean;
     function GravarItemBanco: Boolean;
     function GravarPagBanco(const cdFinalizadora: Integer; const valor: Currency): Boolean;
+    procedure GravarClienteVenda(cdCliente: Integer = 1; nomeCliente: String = ''; cpfCliente: String = '');
     function ValidarLogin(user, senha: String): Boolean;
     function VerificarTemConfiguracao: Boolean;
     function AcharNotaSincronizar: TFDquery;
 
-    function GravarEmpresa(dados: TFDMemTable): Boolean;
-    function GravarCliente(dados: TFDMemTable): Boolean;
-    function GravarProduto(dados: TFDMemTable): Boolean;
+    function GravarEmpresa(dados: TFDMemTable): Boolean; {Sincronismo}
+    function GravarCliente(dados: TFDMemTable): Boolean; {Sincronismo}
+    function GravarProduto(dados: TFDMemTable): Boolean; {Sincronismo}
+    function GravarUsuario(dados: TFDMemTable): Boolean; {Sincronismo}
 
     procedure ModificarQuantidade(operacao: opQuantidade; index: integer; qtd: String = '1');
     procedure GravarConfigu(disp, ipServidor, portaServidor, Cnpj: String);
@@ -210,14 +212,8 @@ begin
     result.gtin := qryProduto.FieldByName('GTIN').AsString;
     result.AliqIcms := qryProduto.FieldByName('ALIQ').AsFloat;
     result.pcReducao := qryProduto.FieldByName('PC_REDUCAO').AsCurrency;
+    result.cfop := qryProduto.FieldByName('CFOP').AsInteger;
     result.qtd := 1;
-
-    if result.cst = '000' then
-      result.cfop := configuracao.CFOP
-    else
-      result.cfop := configuracao.CFOPST;
-
-
   finally
     qryProduto.Close;
   end;
@@ -318,8 +314,6 @@ begin
     configuracao.CaixaCodigo := qryConfiguracao.FieldByName('CAIXA_CODIGO').AsInteger;
     configuracao.Serie := qryConfiguracao.FieldByName('SERIE').AsInteger;
     configuracao.Modelo := qryConfiguracao.FieldByName('MODELO').AsInteger;
-    configuracao.CFOP := qryConfiguracao.FieldByName('CFOP').AsInteger;
-    configuracao.CFOPST := qryConfiguracao.FieldByName('CFOP_ST').AsInteger;
     configuracao.IdCsc := qryConfiguracao.FieldByName('ID_CSC').AsInteger;
     configuracao.Csc := qryConfiguracao.FieldByName('CSC').AsString;
     configuracao.UrlPFX := qryConfiguracao.FieldByName('URL_PFX').AsString;
@@ -472,29 +466,29 @@ begin
   qryCliente.Connection := conexao;
 
   qryCliente.Sql.Add(
-    ' INSERT INTO CLIENTE (ATIVO, CPF, NOME, ID ) ' +
+    ' INSERT OR REPLACE INTO CLIENTE (ATIVO, CPF, NOME, ID ) ' +
     '   VALUES (:ATIVO, :CPF, :NOME, :ID )');
 
   qryCliente.Params.ArraySize := dados.RecordCount;
   dados.First;
-  while not dados.Eof do
-  begin
-    qryCliente.Params[0].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('RTI_CODIGO').AsInteger;
-    qryCliente.Params[1].AsIntegers[dados.IndexFieldCount] :=
-      dados.FieldByName('EST_CODIGOIBGE').AsInteger;
-    qryCliente.Params[2].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('PES_TELEFONE1').AsString;
-    qryCliente.Params[3].AsStrings[dados.IndexFieldCount] :=
-      dados.FieldByName('PES_RGINSCEST').AsString;
-
-    dados.Next;
-  end;
 
   try
-
     try
-      qryCliente.Execute(dados.RecordCount);
+
+      while not dados.Eof do
+      begin
+        qryCliente.Params[3].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesCodigo').Value);
+        qryCliente.Params[2].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesNome').Value);
+        qryCliente.Params[1].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesCpf').Value);
+        qryCliente.Params[0].Values[dados.IndexFieldCount] := 1;
+        dados.Next;
+      end;
+
+      qryCliente.Execute(qryCliente.Params.ArraySize);
+
     except on E: Exception  do
       begin
         result := False;
@@ -503,6 +497,37 @@ begin
     end;
 
     result := True;
+
+  finally
+    qryCliente.Free;
+  end;
+
+end;
+
+procedure TdmPrincipal.GravarClienteVenda(cdCliente: Integer;
+  nomeCliente: String; cpfCliente: String);
+var
+  qryCliente: TFDquery;
+begin
+  qryCliente := TFDquery.Create(nil);
+  qryCliente.Connection := conexao;
+
+  qryCliente.SQL.Add('UPDATE ' +
+                     '	NOTAC ' +
+                     'SET ' +
+                     '	CD_CLIENTE = :CD_CLIENTE, ' +
+                     '	NOME_CLIENTE = :NOME_CLIENTE, ' +
+                     '	CPF_CLIENTE = :CPF_CLIENTE ' +
+                     'WHERE ' +
+                     '	NR_DOCUMENTO = :NR_DOCUMENTO ');
+
+  try
+    qryCliente.ParamByName('NR_DOCUMENTO').AsInteger := rCupom.nrDocumento;
+    qryCliente.ParamByName('CPF_CLIENTE').AsString := cpfCliente;
+    qryCliente.ParamByName('CD_CLIENTE').AsInteger := cdCliente;
+    qryCliente.ParamByName('NOME_CLIENTE').AsString := nomeCliente;
+
+    qryCliente.ExecSQL;
 
   finally
     qryCliente.Free;
@@ -694,37 +719,52 @@ begin
   qryProduto.Connection := conexao;
 
   qryProduto.Sql.Add(
-    ' INSERT INTO PRODUTO (PC_REDUCAO, GTIN, PESO_LIQUIDO, ATIVO, FAVORITO, NATUREZA_RECEITA, ' +
+    ' INSERT OR REPLACE INTO PRODUTO (PC_REDUCAO, GTIN, PESO_LIQUIDO, ATIVO, NATUREZA_RECEITA, ' +
     '   CST_PISCOFINS, CEST, NCM, ALIQ, CST_ICMS, UN, DESCRICAO, CD_BARRAS, CD_PRODUTO) ' +
-    ' VALUES (:PC_REDUCAO, :GTIN, :PESO_LIQUIDO, :ATIVO, :FAVORITO, :NATUREZA_RECEITA, ' +
+    ' VALUES (:PC_REDUCAO, :GTIN, :PESO_LIQUIDO, :ATIVO, :NATUREZA_RECEITA, ' +
     '   :CST_PISCOFINS, :CEST, :NCM, :ALIQ, :CST_ICMS, :UN, :DESCRICAO, :CD_BARRAS, :CD_PRODUTO)');
 
   qryProduto.Params.ArraySize := dados.RecordCount;
   dados.First;
   while not dados.Eof do
   begin
-    qryProduto.Params[16].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('proCodigo').Value);
-    qryProduto.Params[15].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('proCodigoExterno').Value);
-    qryProduto.Params[14].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('proNomereduzido').Value);
     qryProduto.Params[13].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('proPesoliquido').Value);
+      VerificarNull(dados.FieldByName('proCodigo').Value);
     qryProduto.Params[12].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pbaBarras').Value);
+    qryProduto.Params[11].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proNomereduzido').Value);
+    qryProduto.Params[10].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('undSigla').Value);
+    qryProduto.Params[9].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('cstIcms').Value);
+    qryProduto.Params[8].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pfiAliquotaIcms').Value);
+    qryProduto.Params[7].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('cfiClasse').Value);
+    qryProduto.Params[6].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('cesIdentificador').Value);
+    qryProduto.Params[5].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('cstPis').Value);
+    qryProduto.Params[4].Values[dados.IndexFieldCount] := 1;
+    qryProduto.Params[3].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('ppeAtivo').Value);
+    qryProduto.Params[2].Values[dados.IndexFieldCount] :=
       VerificarNull(dados.FieldByName('proPesoliquido').Value);
-    //TODO: Rafa precisa ajustar o SQL no servidor
+    qryProduto.Params[1].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proGtin').Value);
+    qryProduto.Params[0].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pfiReducaobase').Value);
     dados.Next;
   end;
 
   try
-
     try
       qryProduto.Execute(dados.RecordCount);
     except on E: Exception  do
       begin
         result := False;
-        Log('GravarCliente', 'Erro ao gravar cliente : ' + e.Message);
+        Log('GravarProduto', 'Erro ao gravar produto : ' + e.Message);
       end;
     end;
 
@@ -736,6 +776,53 @@ begin
 
 end;
 
+function TdmPrincipal.GravarUsuario(dados: TFDMemTable): Boolean;
+var
+  qryUsuario: TFDquery;
+begin
+  qryUsuario := TFDquery.Create(nil);
+  qryUsuario.Connection := conexao;
+
+  qryUsuario.Sql.Add(
+    'INSERT OR REPLACE INTO USUARIO (ATIVO, SENHA, LOGIN, NOME, ID) ' +
+    '	VALUES (:ATIVO, :SENHA, :LOGIN, :NOME, :ID) ');
+
+  qryUsuario.Params.ArraySize := dados.RecordCount;
+  dados.First;
+
+  try
+    try
+
+      while not dados.Eof do
+      begin
+        qryUsuario.Params[4].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesCodigoUsuario').Value);
+        qryUsuario.Params[3].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('usuUsuario').Value);
+        qryUsuario.Params[2].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('usuUsuario').Value);
+        qryUsuario.Params[1].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('usuSenha').Value);
+        qryUsuario.Params[0].Values[dados.IndexFieldCount] := 1;
+        dados.Next;
+      end;
+
+      qryUsuario.Execute(qryUsuario.Params.ArraySize);
+
+    except on E: Exception  do
+      begin
+        result := False;
+        Log('GravarUsuario', 'Erro ao gravar usuario : ' + e.Message);
+      end;
+    end;
+
+    result := True;
+
+  finally
+    qryUsuario.Free;
+  end;
+
+end;
 procedure TdmPrincipal.GravarConfigu(disp, ipServidor, portaServidor,
   Cnpj: String);
 var
@@ -788,6 +875,7 @@ function TdmPrincipal.GravarEmpresa(dados: TFDMemTable): Boolean;
 var
   qryEmpresa: TFDquery;
 begin
+
   qryEmpresa := TFDquery.Create(nil);
   qryEmpresa.Connection := conexao;
 
@@ -801,72 +889,72 @@ begin
   qryEmpresa.Params.ArraySize := dados.RecordCount;
   dados.First;
 
-  while not dados.Eof do
-  begin
-    qryEmpresa.Params[0].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('rtiCodigo').Value);
-
-    qryEmpresa.Params[1].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('estCodigoibge').Value);
-
-    qryEmpresa.Params[2].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesTelefone1').Value);
-
-    qryEmpresa.Params[3].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesRginscest').Value);
-
-    qryEmpresa.Params[4].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesAliquotacofins').Value);
-
-    qryEmpresa.Params[5].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesAliquotapis').Value);
-
-    qryEmpresa.Params[6].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesCep').Value);
-
-    qryEmpresa.Params[7].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesNumero').Value);
-
-    qryEmpresa.Params[7].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('estCodigoibge').Value);
-
-    qryEmpresa.Params[8].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('estCodigoibge').Value);
-
-    qryEmpresa.Params[9].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesRua').Value);
-
-    qryEmpresa.Params[10].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesBairro').Value);
-
-    qryEmpresa.Params[11].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('cidCodigoibge').Value);
-
-    qryEmpresa.Params[12].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('cidNome').Value);
-
-    qryEmpresa.Params[13].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('estSigla').Value);
-
-    qryEmpresa.Params[14].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesCpfcnpj').Value);
-
-    qryEmpresa.Params[15].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesNome').Value);
-
-    qryEmpresa.Params[16].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesNome').Value);
-
-    qryEmpresa.Params[17].Values[dados.IndexFieldCount] :=
-      VerificarNull(dados.FieldByName('pesCodigo').Value);
-
-    dados.Next;
-  end;
-
   try
-
     try
-      qryEmpresa.Execute(dados.RecordCount);
+
+      while not dados.Eof do
+      begin
+        qryEmpresa.Params[0].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('rtiCodigo').Value);
+
+        qryEmpresa.Params[1].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('estCodigoibge').Value);
+
+        qryEmpresa.Params[2].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesTelefone1').Value);
+
+        qryEmpresa.Params[3].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesRginscest').Value);
+
+        qryEmpresa.Params[4].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesAliquotacofins').Value);
+
+        qryEmpresa.Params[5].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesAliquotapis').Value);
+
+        qryEmpresa.Params[6].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesCep').Value);
+
+        qryEmpresa.Params[7].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesNumero').Value);
+
+        qryEmpresa.Params[7].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('estCodigoibge').Value);
+
+        qryEmpresa.Params[8].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('estCodigoibge').Value);
+
+        qryEmpresa.Params[9].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesRua').Value);
+
+        qryEmpresa.Params[10].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesBairro').Value);
+
+        qryEmpresa.Params[11].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('cidCodigoibge').Value);
+
+        qryEmpresa.Params[12].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('cidNome').Value);
+
+        qryEmpresa.Params[13].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('estSigla').Value);
+
+        qryEmpresa.Params[14].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesCpfcnpj').Value);
+
+        qryEmpresa.Params[15].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesNome').Value);
+
+        qryEmpresa.Params[16].Values[dados.IndexFieldCount] :=
+          VerificarNull(dados.FieldByName('pesNome').Value);
+
+        qryEmpresa.Params[17].Values[dados.IndexFieldCount] := 1;
+
+        dados.Next;
+      end;
+
+      qryEmpresa.Execute(qryEmpresa.Params.ArraySize);
+
     except on E: Exception  do
       begin
         result := False;
@@ -987,6 +1075,7 @@ begin
       rCupom.nrNota := qryNotaC.FieldByName('NR_NOTA').AsInteger;
 
       qryNotaC.Close;
+      dmPrincipal.GravarClienteVenda(rCliCupom.cdCliente, rCliCupom.nmCliente, rCliCupom.cpfCliente);
     except on E: Exception do
       raise Exception.Create('Erro ao iniciar o cabeçalho: ' + e.Message);
     end;
@@ -1505,12 +1594,9 @@ begin
   qryConfig.Connection := conexao;
 
   try
-    qryConfig.Open('SELECT DISP_ID FROM CONFIGURACAO WHERE DISP_ID > 0');
+    qryConfig.Open('SELECT IMEI FROM CONFIGURACAO_LOCAL');
 
-    result := not qryConfig.IsEmpty;
-
-    if not result then
-      dmPrincipal.GravarIMEI;
+    result := not qryConfig.FieldByName('IMEI').IsNull;
 
   finally
     qryConfig.Free;
