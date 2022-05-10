@@ -5,7 +5,10 @@ interface
   uses
     FMX.ListView, FMX.ListView.Appearances, FMX.ListView.Types, System.SysUtils,
     FMX.VirtualKeyboard, FMX.Platform, FMX.Edit, FMX.Platform.Android, FMX.Forms,
-    System.Classes, StrUtils;
+    System.Classes, StrUtils, Androidapi.JNI.Provider, Androidapi.JNI.NET,
+    Androidapi.JNI.App, Androidapi.JNIBridge, System.Permissions,
+    Androidapi.Helpers, Androidapi.JNI.Telephony, Androidapi.JNI.OS,
+    Androidapi.JNI.JavaTypes, Androidapi.JNI.GraphicsContentViewText;
 
   type
     TUtilitarios = class
@@ -28,14 +31,23 @@ interface
     function TestarCPF(cpf: string): boolean;
     function TestarCNPJ(numCNPJ: string): boolean;
 
+    procedure PermissoesEspeciais;
+
 implementation
 
 uses
-  System.Permissions, Androidapi.Helpers, Androidapi.JNI.Telephony,
-  Androidapi.JNI.OS, uDmSincronismo, Loading, uConfiguracao, uFormat;
+
+  uDmSincronismo, Loading, uConfiguracao, uFormat;
 
 { TUtilitarios }
 
+procedure PermissoesEspeciais;
+var
+  _permissaoPhoneState: String;
+begin
+  _permissaoPhoneState := JStringToString(TJManifest_permission.JavaClass.READ_PHONE_STATE);
+  PermissionsService.RequestPermissions([_permissaoPhoneState], nil, nil);
+end;
 
 function TestarCNPJ(numCNPJ: string): boolean;
 var
@@ -190,11 +202,35 @@ begin
 end;
 
 function CapturarImei: String;
-var
-  TM: JTelephonyManager;
+
+  function LocalGetImei: String;
+  var
+    obj: JObject;
+    TM: JTelephonyManager;
+    IMEI: String;
+  begin
+    result := 'SEM PERMISSAO';
+    obj := SharedActivityContext.getSystemService(TJContext.JavaClass.TELEPHONY_SERVICE);
+    if obj <> nil then
+    begin
+      TM := TJTelephonyManager.Wrap((obj as ILocalObject).GetObjectID);
+      if TM <> nil then
+        IMEI := JStringToString(TM.getDeviceID);
+    end;
+
+    if IMEI = '' then
+    begin
+      IMEI := JStringToString(
+        TJSettings_secure.JavaClass.getString(
+          SharedActivity.getContentResolver,
+          TJSettings_Secure.JavaClass.ANDROID_ID))
+    end;
+
+    result := IMEI;
+  end;
+
 begin
-  TM := TJTelephonyManager.Create;
-  result := JStringToString(TM.getImei);
+  result := LocalGetImei;
 end;
 
 procedure IniciarSincronismo(quemChamou: TForm; msg: String);
@@ -276,5 +312,7 @@ begin
     CloseFile(arq)
   end;
 end;
+
+{ TUtilitarios }
 
 end.

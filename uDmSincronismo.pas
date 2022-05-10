@@ -27,6 +27,7 @@ type
     function ReceberEmpresa: Boolean; {Receber}
     function ReceberCliente: Boolean; {Receber}
     function ReceberProduto: Boolean; {Receber}
+    function ReceberPreco: Boolean; {Receber}
     function ReceberUsuario: Boolean; {Receber}
 
     procedure SetImei(const Value: String);
@@ -119,8 +120,6 @@ begin
 end;
 
 function TdmSincronismo.ReceberCliente: Boolean;
-var
-  json: TJsonObject;
 begin
 
   rstRequest.Body.ClearBody;
@@ -195,6 +194,40 @@ begin
 
   fdMemTable.Open;
   result := dmPrincipal.GravarEmpresa(fdMemTable);
+end;
+
+function TdmSincronismo.ReceberPreco: Boolean;
+begin
+  fdMemTable.Close;
+  rstRequest.Body.ClearBody;
+  rstRequest.Params.Clear;
+
+  with rstRequest.Params.AddItem do
+  begin
+    ContentType := ctAPPLICATION_JSON;
+    name        := 'body';
+    Value       := ImeiJson;
+    Kind        := pkREQUESTBODY;
+  end;
+
+  rstRequest.Method := TRESTRequestMethod.rmPOST;
+  rstRequest.Resource := 'post_TPrecoController';
+
+  try
+
+    rstRequest.Execute;
+
+  except on E: Exception do
+    begin
+      Log('ReceberPreco', 'Erro ao receber preco : ' + e.Message);
+      result := False;
+      Log(rstResponse.StatusCode.ToString, rstResponse.StatusText);
+      Exit;
+    end;
+  end;
+
+  fdMemTable.Open;
+//  result := dmPrincipal.GravarPreco(fdMemTable);
 end;
 
 function TdmSincronismo.ReceberProduto: Boolean;

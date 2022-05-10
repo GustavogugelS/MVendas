@@ -55,7 +55,6 @@ type
     procedure EsconderTab;
     procedure AbrirMenuPrincipal;
     procedure SalvarConfigEdicao;
-    procedure CarregarConfigEdicao;
     procedure CarregarUltimoLogin;
 
     function FazerLogin: Boolean;
@@ -133,14 +132,6 @@ begin
 
   dmPrincipal.ControlarCaixa(1);
   result := True;
-end;
-
-procedure TfrmLogin.CarregarConfigEdicao;
-begin
-  edtDispositivo.Text := configuracao.IdDispositivo.ToString;
-  edtIpServidor.Text := configuracao.Ipservidor;
-  edtPortaServidor.Text := configuracao.portaServidor.ToString;
-  edtCNPJ.Text := empresa.Cnpj;
 end;
 
 procedure TfrmLogin.CarregarUltimoLogin;

@@ -12,7 +12,9 @@ uses
   FireDAC.Stan.ExprFuncs, FireDAC.Comp.UI, uFrmVendas,
   MVCFramework.RESTClient, System.JSON, ACBrBase, ACBrDFeReport,
   ACBrDFeDANFeReport, ACBrNFeDANFEClass, ACBrNFeDANFeESCPOS, ACBrPosPrinter,
-  ACBrPosPrinterGEDI, System.Math, uVenda, System.Variants;
+  ACBrPosPrinterGEDI, System.Math, uVenda, System.Variants,
+  MobilePermissions.Model.Signature, MobilePermissions.Model.Dangerous,
+  MobilePermissions.Model.Standard, FMX.Types, MobilePermissions.Component;
 
 type
 
@@ -29,6 +31,7 @@ type
     qryCaixaMov: TFDQuery;
     AcbrEscPos: TACBrNFeDANFeESCPOS;
     AcbrPosPrinter: TACBrPosPrinter;
+    MobilePermissions1: TMobilePermissions;
     procedure DataModuleCreate(Sender: TObject);
     procedure conexaoBeforeConnect(Sender: TObject);
 
@@ -41,6 +44,7 @@ type
     function CarregarDadosEmpresa: Boolean;
 
     procedure SalvarUltimoUsuario(user: String);
+    procedure AplicarPermissao;
     function VerificarNull(valor: Variant): Variant;
 
   public
@@ -67,6 +71,7 @@ type
     function GravarEmpresa(dados: TFDMemTable): Boolean; {Sincronismo}
     function GravarCliente(dados: TFDMemTable): Boolean; {Sincronismo}
     function GravarProduto(dados: TFDMemTable): Boolean; {Sincronismo}
+    function GravarPreco(dados: TFDMemTable): Boolean; {Sincronismo}
     function GravarUsuario(dados: TFDMemTable): Boolean; {Sincronismo}
 
     procedure ModificarQuantidade(operacao: opQuantidade; index: integer; qtd: String = '1');
@@ -711,6 +716,48 @@ begin
   end;
 end;
 
+function TdmPrincipal.GravarPreco(dados: TFDMemTable): Boolean;
+var
+  qryPreco: TFDquery;
+begin
+  qryPreco := TFDquery.Create(nil);
+  qryPreco.Connection := conexao;
+
+  qryPreco.Sql.Add(
+    'INSERT INTO TABELA_PRECO_ITEM (PRECO, CD_PRODUTO, ID) ' +
+    '    VALUES (:PRECO, :CD_PRODUTO, :ID); ');
+
+  qryPreco.Params.ArraySize := dados.RecordCount;
+  dados.First;
+  while not dados.Eof do
+  begin
+    qryPreco.Params[13].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proCodigo').Value);
+    qryPreco.Params[12].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('pbaBarras').Value);
+    qryPreco.Params[11].Values[dados.IndexFieldCount] :=
+      VerificarNull(dados.FieldByName('proNomereduzido').Value);
+    dados.Next;
+  end;
+
+  try
+    try
+      qryPreco.Execute(dados.RecordCount);
+    except on E: Exception  do
+      begin
+        result := False;
+        Log('GravarPreco', 'Erro ao gravar preco : ' + e.Message);
+      end;
+    end;
+
+    result := True;
+
+  finally
+    qryPreco.Free;
+  end;
+
+end;
+
 function TdmPrincipal.GravarProduto(dados: TFDMemTable): Boolean;
 var
   qryProduto: TFDquery;
@@ -974,6 +1021,8 @@ procedure TdmPrincipal.GravarIMEI;
 var
   qryImei: TFDquery;
 begin
+  PermissoesEspeciais;
+
   qryImei := TFDquery.Create(nil);
   qryImei.Connection := conexao;
 
@@ -1105,6 +1154,12 @@ begin
     qry.Free;
   end;
 
+end;
+
+procedure TdmPrincipal.AplicarPermissao;
+begin
+  MobilePermissions1.Dangerous.ReadPhoneState := True;
+  MobilePermissions1.Apply;
 end;
 
 procedure TdmPrincipal.AtualizarStatusNota(const tipo: Integer);

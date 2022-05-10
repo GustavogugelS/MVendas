@@ -202,7 +202,7 @@ object dmPrincipal: TdmPrincipal
     MargemInferior = 8.000000000000000000
     MargemSuperior = 8.000000000000000000
     MargemEsquerda = 6.000000000000000000
-    MargemDireita = 5.100000000000000000
+    MargemDireita = 5.099999999999999000
     ExpandeLogoMarcaConfig.Altura = 0
     ExpandeLogoMarcaConfig.Esquerda = 0
     ExpandeLogoMarcaConfig.Topo = 0
@@ -233,5 +233,9 @@ object dmPrincipal: TdmPrincipal
     LinhasEntreCupons = 0
     Left = 816
     Top = 384
+  end
+  object MobilePermissions1: TMobilePermissions
+    Left = 56
+    Top = 392
   end
 end
